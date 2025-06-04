@@ -31,16 +31,24 @@ import {
   Delete as DeleteIcon,
 } from "@mui/icons-material";
 import { dashboardApi } from "../api/dashboardApi";
+import ConfirmationModal from "../components/ConfirmationModal";
 
 const Floors = () => {
   const { data: buildings = [] } = dashboardApi.useGetBuildingsQuery();
-  const [selectedBuilding, setSelectedBuilding] = React.useState("");
+  const [selectedBuilding, setSelectedBuilding] = React.useState("all");
+
+  // Barcha qavatlarni olish uchun alohida query
+  const { data: allFloors = [], isLoading: allFloorsLoading } =
+    dashboardApi.useGetAllFloorsQuery();
+
+  // Tanlangan bino bo'yicha qavatlar
   const { data: floors = [], isLoading } = dashboardApi.useGetFloorsQuery(
-    selectedBuilding,
+    selectedBuilding !== "all" ? selectedBuilding : undefined,
     {
-      skip: !selectedBuilding,
+      skip: selectedBuilding === "all",
     }
   );
+
   const [createFloor] = dashboardApi.useCreateFloorMutation();
   const [updateFloor] = dashboardApi.useUpdateFloorMutation();
   const [deleteFloor] = dashboardApi.useDeleteFloorMutation();
@@ -49,6 +57,12 @@ const Floors = () => {
     open: false,
     mode: "create",
     data: null,
+  });
+  const [confirmModal, setConfirmModal] = React.useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
   });
   const [snackbar, setSnackbar] = React.useState({
     open: false,
@@ -61,24 +75,52 @@ const Floors = () => {
     building: "",
   });
 
+  // Ko'rsatiladigan qavatlar - tanlangan binoga qarab
+  const displayFloors = selectedBuilding === "all" ? allFloors : floors;
+
+  const showConfirmation = (title, message, onConfirm) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal({
+          isOpen: false,
+          title: "",
+          message: "",
+          onConfirm: null,
+        });
+      },
+    });
+  };
+
+  const closeConfirmation = () => {
+    setConfirmModal({ isOpen: false, title: "", message: "", onConfirm: null });
+  };
+
   const handleFloorSubmit = async () => {
     try {
       const formData = {
         ...floorForm,
-        building: selectedBuilding || floorForm.building,
+        building:
+          selectedBuilding !== "all" && selectedBuilding
+            ? selectedBuilding
+            : floorForm.building,
       };
+
       if (floorModal.mode === "create") {
         await createFloor(formData).unwrap();
         setSnackbar({
           open: true,
-          message: "Этаж создан успешно!",
+          message: "Qavat muvaffaqiyatli yaratildi!",
           severity: "success",
         });
       } else {
         await updateFloor({ id: floorModal.data.id, ...formData }).unwrap();
         setSnackbar({
           open: true,
-          message: "Этаж обновлен успешно!",
+          message: "Qavat muvaffaqiyatli yangilandi!",
           severity: "success",
         });
       }
@@ -87,23 +129,34 @@ const Floors = () => {
     } catch (error) {
       setSnackbar({
         open: true,
-        message: "Ошибка при сохранении",
+        message: "Saqlashda xatolik yuz berdi",
         severity: "error",
       });
     }
   };
 
-  const handleFloorDelete = async (id) => {
-    try {
-      await deleteFloor(id).unwrap();
-      setSnackbar({ open: true, message: "Этаж удален!", severity: "info" });
-    } catch (error) {
-      setSnackbar({
-        open: true,
-        message: "Ошибка при удалении",
-        severity: "error",
-      });
-    }
+  const handleFloorDelete = async (floor) => {
+    const building = buildings.find((b) => b.id === floor.building);
+    showConfirmation(
+      "Qavatni o'chirish",
+      `"${floor.number}-qavat (${building?.name})" qavatini o'chirishni tasdiqlaysizmi? Bu amal bekor qilib bo'lmaydi.`,
+      async () => {
+        try {
+          await deleteFloor(floor.id).unwrap();
+          setSnackbar({
+            open: true,
+            message: "Qavat o'chirildi!",
+            severity: "info",
+          });
+        } catch (error) {
+          setSnackbar({
+            open: true,
+            message: "O'chirishda xatolik yuz berdi",
+            severity: "error",
+          });
+        }
+      }
+    );
   };
 
   const openFloorModal = (mode, floor = null) => {
@@ -114,10 +167,18 @@ const Floors = () => {
         building: floor.building,
       });
     } else {
-      setFloorForm({ number: 1, description: "", building: selectedBuilding });
+      setFloorForm({
+        number: 1,
+        description: "",
+        building: selectedBuilding !== "all" ? selectedBuilding : "",
+      });
     }
     setFloorModal({ open: true, mode, data: floor });
   };
+
+  if (isLoading) {
+    return <Typography>Yuklanmoqda...</Typography>;
+  }
 
   return (
     <Box>
@@ -130,7 +191,7 @@ const Floors = () => {
         }}
       >
         <Typography variant="h4" fontWeight="bold">
-          Управление этажами
+          Qavatlarni boshqarish
         </Typography>
         <Button
           variant="contained"
@@ -138,9 +199,8 @@ const Floors = () => {
           onClick={() => openFloorModal("create")}
           size="large"
           sx={{ borderRadius: 2 }}
-          disabled={!selectedBuilding}
         >
-          Добавить этаж
+          Qavat qo'shish
         </Button>
       </Box>
 
@@ -150,12 +210,13 @@ const Floors = () => {
       >
         <CardContent sx={{ p: 3 }}>
           <FormControl fullWidth>
-            <InputLabel>Выберите здание</InputLabel>
+            <InputLabel>Binoni tanlang</InputLabel>
             <Select
               value={selectedBuilding}
               onChange={(e) => setSelectedBuilding(e.target.value)}
-              label="Выберите здание"
+              label="Binoni tanlang"
             >
+              <MenuItem value="all">Barcha binolar</MenuItem>
               {buildings.map((building) => (
                 <MenuItem key={building.id} value={building.id}>
                   {building.name} - {building.address}
@@ -166,33 +227,47 @@ const Floors = () => {
         </CardContent>
       </Card>
 
-      {selectedBuilding && (
-        <Card sx={{ borderRadius: 3, boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow sx={{ backgroundColor: "#f8fafc" }}>
-                  <TableCell sx={{ fontWeight: 600 }}>Номер этажа</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Описание</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Здание</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 600 }}>
-                    Действия
+      {/* Floors Table */}
+      <Card sx={{ borderRadius: 3, boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ backgroundColor: "#f8fafc" }}>
+                <TableCell sx={{ fontWeight: 600 }}>Qavat raqami</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Tavsif</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Bino</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 600 }}>
+                  Amallar
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {displayFloors.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
+                    <Typography color="textSecondary">
+                      {selectedBuilding === "all"
+                        ? "Hech qanday qavat topilmadi"
+                        : "Tanlangan binoda qavatlar mavjud emas"}
+                    </Typography>
                   </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {floors.map((floor) => (
+              ) : (
+                displayFloors.map((floor) => (
                   <TableRow
                     key={floor.id}
                     hover
                     sx={{ "&:hover": { backgroundColor: "#f8fafc" } }}
                   >
                     <TableCell sx={{ fontWeight: 500 }}>
-                      {floor.number}
+                      {floor.number}-qavat
                     </TableCell>
-                    <TableCell>{floor.description}</TableCell>
                     <TableCell>
-                      {buildings.find((b) => b.id === floor.building)?.name}
+                      {floor.description || "Tavsif mavjud emas"}
+                    </TableCell>
+                    <TableCell>
+                      {buildings.find((b) => b.id === floor.building)?.name ||
+                        "Noma'lum"}
                     </TableCell>
                     <TableCell align="center">
                       <IconButton
@@ -203,19 +278,19 @@ const Floors = () => {
                         <EditIcon />
                       </IconButton>
                       <IconButton
-                        onClick={() => handleFloorDelete(floor.id)}
+                        onClick={() => handleFloorDelete(floor)}
                         color="error"
                       >
                         <DeleteIcon />
                       </IconButton>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Card>
-      )}
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Card>
 
       {/* Floor Modal */}
       <Dialog
@@ -226,12 +301,14 @@ const Floors = () => {
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
         <DialogTitle sx={{ fontWeight: 600 }}>
-          {floorModal.mode === "create" ? "Создать этаж" : "Редактировать этаж"}
+          {floorModal.mode === "create"
+            ? "Qavat yaratish"
+            : "Qavatni tahrirlash"}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 2 }}>
             <TextField
-              label="Номер этажа"
+              label="Qavat raqami"
               type="number"
               value={floorForm.number}
               onChange={(e) =>
@@ -242,9 +319,10 @@ const Floors = () => {
               }
               fullWidth
               required
+              inputProps={{ min: 1 }}
             />
             <TextField
-              label="Описание"
+              label="Tavsif"
               value={floorForm.description}
               onChange={(e) =>
                 setFloorForm({ ...floorForm, description: e.target.value })
@@ -252,20 +330,21 @@ const Floors = () => {
               fullWidth
               multiline
               rows={3}
+              placeholder="Qavat haqida qo'shimcha ma'lumot"
             />
-            {!selectedBuilding && (
+            {(selectedBuilding === "all" || floorModal.mode === "edit") && (
               <FormControl fullWidth required>
-                <InputLabel>Здание</InputLabel>
+                <InputLabel>Bino</InputLabel>
                 <Select
                   value={floorForm.building}
                   onChange={(e) =>
                     setFloorForm({ ...floorForm, building: e.target.value })
                   }
-                  label="Здание"
+                  label="Bino"
                 >
                   {buildings.map((building) => (
                     <MenuItem key={building.id} value={building.id}>
-                      {building.name}
+                      {building.name} - {building.address}
                     </MenuItem>
                   ))}
                 </Select>
@@ -275,14 +354,14 @@ const Floors = () => {
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
           <Button onClick={() => setFloorModal({ ...floorModal, open: false })}>
-            Отмена
+            Bekor qilish
           </Button>
           <Button
             onClick={handleFloorSubmit}
             variant="contained"
             sx={{ borderRadius: 2 }}
           >
-            {floorModal.mode === "create" ? "Создать" : "Сохранить"}
+            {floorModal.mode === "create" ? "Yaratish" : "Saqlash"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -300,6 +379,16 @@ const Floors = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirmation}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type="danger"
+      />
     </Box>
   );
 };

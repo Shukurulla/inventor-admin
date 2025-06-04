@@ -32,6 +32,7 @@ import {
   Delete as DeleteIcon,
 } from "@mui/icons-material";
 import { usersApi } from "../api/usersApi";
+import ConfirmationModal from "../components/ConfirmationModal";
 
 const Users = () => {
   const { data: users = [], isLoading } = usersApi.useGetUsersQuery();
@@ -43,6 +44,12 @@ const Users = () => {
     open: false,
     mode: "create",
     data: null,
+  });
+  const [confirmModal, setConfirmModal] = React.useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
   });
   const [snackbar, setSnackbar] = React.useState({
     open: false,
@@ -59,13 +66,48 @@ const Users = () => {
     role: "user",
   });
 
+  const showConfirmation = (title, message, onConfirm) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal({
+          isOpen: false,
+          title: "",
+          message: "",
+          onConfirm: null,
+        });
+      },
+    });
+  };
+
+  const closeConfirmation = () => {
+    setConfirmModal({ isOpen: false, title: "", message: "", onConfirm: null });
+  };
+
   const handleUserSubmit = async () => {
     try {
       if (userModal.mode === "create") {
         await createUser(userForm).unwrap();
         setSnackbar({
           open: true,
-          message: "Пользователь обновлен успешно!",
+          message: "Foydalanuvchi muvaffaqiyatli yaratildi!",
+          severity: "success",
+        });
+      } else {
+        const updateData = { ...userForm };
+        if (!updateData.password) {
+          delete updateData.password; // Don't send empty password
+        }
+        await updateUser({
+          id: userModal.data.id,
+          ...updateData,
+        }).unwrap();
+        setSnackbar({
+          open: true,
+          message: "Foydalanuvchi muvaffaqiyatli yangilandi!",
           severity: "success",
         });
       }
@@ -82,27 +124,33 @@ const Users = () => {
     } catch (error) {
       setSnackbar({
         open: true,
-        message: "Ошибка при сохранении",
+        message: "Saqlashda xatolik yuz berdi",
         severity: "error",
       });
     }
   };
 
-  const handleUserDelete = async (id) => {
-    try {
-      await deleteUser(id).unwrap();
-      setSnackbar({
-        open: true,
-        message: "Пользователь удален!",
-        severity: "info",
-      });
-    } catch (error) {
-      setSnackbar({
-        open: true,
-        message: "Ошибка при удалении",
-        severity: "error",
-      });
-    }
+  const handleUserDelete = async (user) => {
+    showConfirmation(
+      "Foydalanuvchini o'chirish",
+      `"${user.first_name} ${user.last_name}" foydalanuvchisini o'chirishni tasdiqlaysizmi? Bu amal bekor qilib bo'lmaydi.`,
+      async () => {
+        try {
+          await deleteUser(user.id).unwrap();
+          setSnackbar({
+            open: true,
+            message: "Foydalanuvchi o'chirildi!",
+            severity: "info",
+          });
+        } catch (error) {
+          setSnackbar({
+            open: true,
+            message: "O'chirishda xatolik yuz berdi",
+            severity: "error",
+          });
+        }
+      }
+    );
   };
 
   const openUserModal = (mode, user = null) => {
@@ -130,8 +178,30 @@ const Users = () => {
     setUserModal({ open: true, mode, data: user });
   };
 
+  const getRoleText = (role) => {
+    switch (role) {
+      case "admin":
+        return "Administrator";
+      case "manager":
+        return "Menejer";
+      default:
+        return "Foydalanuvchi";
+    }
+  };
+
+  const getRoleColor = (role) => {
+    switch (role) {
+      case "admin":
+        return "error";
+      case "manager":
+        return "warning";
+      default:
+        return "default";
+    }
+  };
+
   if (isLoading) {
-    return <Typography>Загрузка...</Typography>;
+    return <Typography>Yuklanmoqda...</Typography>;
   }
 
   return (
@@ -145,7 +215,7 @@ const Users = () => {
         }}
       >
         <Typography variant="h4" fontWeight="bold">
-          Управление пользователями
+          Foydalanuvchilarni boshqarish
         </Typography>
         <Button
           variant="contained"
@@ -154,7 +224,7 @@ const Users = () => {
           size="large"
           sx={{ borderRadius: 2 }}
         >
-          Добавить пользователя
+          Foydalanuvchi qo'shish
         </Button>
       </Box>
 
@@ -163,12 +233,12 @@ const Users = () => {
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: "#f8fafc" }}>
-                <TableCell sx={{ fontWeight: 600 }}>Пользователь</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Foydalanuvchi</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Телефон</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Роль</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Telefon</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Rol</TableCell>
                 <TableCell align="center" sx={{ fontWeight: 600 }}>
-                  Действия
+                  Amallar
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -195,23 +265,11 @@ const Users = () => {
                     </Box>
                   </TableCell>
                   <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.phone_number || "Не указан"}</TableCell>
+                  <TableCell>{user.phone_number || "Ko'rsatilmagan"}</TableCell>
                   <TableCell>
                     <Chip
-                      label={
-                        user.role === "admin"
-                          ? "Администратор"
-                          : user.role === "manager"
-                          ? "Менеджер"
-                          : "Пользователь"
-                      }
-                      color={
-                        user.role === "admin"
-                          ? "error"
-                          : user.role === "manager"
-                          ? "warning"
-                          : "default"
-                      }
+                      label={getRoleText(user.role)}
+                      color={getRoleColor(user.role)}
                       size="small"
                       sx={{ borderRadius: 2 }}
                     />
@@ -225,7 +283,7 @@ const Users = () => {
                       <EditIcon />
                     </IconButton>
                     <IconButton
-                      onClick={() => handleUserDelete(user.id)}
+                      onClick={() => handleUserDelete(user)}
                       color="error"
                     >
                       <DeleteIcon />
@@ -248,13 +306,13 @@ const Users = () => {
       >
         <DialogTitle sx={{ fontWeight: 600 }}>
           {userModal.mode === "create"
-            ? "Создать пользователя"
-            : "Редактировать пользователя"}
+            ? "Foydalanuvchi yaratish"
+            : "Foydalanuvchini tahrirlash"}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 2 }}>
             <TextField
-              label="Имя пользователя"
+              label="Foydalanuvchi nomi"
               value={userForm.username}
               onChange={(e) =>
                 setUserForm({ ...userForm, username: e.target.value })
@@ -263,7 +321,7 @@ const Users = () => {
               required
             />
             <TextField
-              label="Имя"
+              label="Ism"
               value={userForm.first_name}
               onChange={(e) =>
                 setUserForm({ ...userForm, first_name: e.target.value })
@@ -272,7 +330,7 @@ const Users = () => {
               required
             />
             <TextField
-              label="Фамилия"
+              label="Familiya"
               value={userForm.last_name}
               onChange={(e) =>
                 setUserForm({ ...userForm, last_name: e.target.value })
@@ -291,15 +349,16 @@ const Users = () => {
               required
             />
             <TextField
-              label="Телефон"
+              label="Telefon"
               value={userForm.phone_number}
               onChange={(e) =>
                 setUserForm({ ...userForm, phone_number: e.target.value })
               }
               fullWidth
+              placeholder="+998901234567"
             />
             <TextField
-              label="Пароль"
+              label="Parol"
               type="password"
               value={userForm.password}
               onChange={(e) =>
@@ -309,36 +368,36 @@ const Users = () => {
               required={userModal.mode === "create"}
               helperText={
                 userModal.mode === "edit"
-                  ? "Оставьте пустым, чтобы не изменять"
+                  ? "Bo'sh qoldiring, agar o'zgartirmoqchi bo'lmasangiz"
                   : ""
               }
             />
             <FormControl fullWidth required>
-              <InputLabel>Роль</InputLabel>
+              <InputLabel>Rol</InputLabel>
               <Select
                 value={userForm.role}
                 onChange={(e) =>
                   setUserForm({ ...userForm, role: e.target.value })
                 }
-                label="Роль"
+                label="Rol"
               >
-                <MenuItem value="user">Пользователь</MenuItem>
-                <MenuItem value="manager">Менеджер</MenuItem>
-                <MenuItem value="admin">Администратор</MenuItem>
+                <MenuItem value="user">Foydalanuvchi</MenuItem>
+                <MenuItem value="manager">Menejer</MenuItem>
+                <MenuItem value="admin">Administrator</MenuItem>
               </Select>
             </FormControl>
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
           <Button onClick={() => setUserModal({ ...userModal, open: false })}>
-            Отмена
+            Bekor qilish
           </Button>
           <Button
             onClick={handleUserSubmit}
             variant="contained"
             sx={{ borderRadius: 2 }}
           >
-            {userModal.mode === "create" ? "Создать" : "Сохранить"}
+            {userModal.mode === "create" ? "Yaratish" : "Saqlash"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -356,6 +415,16 @@ const Users = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirmation}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type="danger"
+      />
     </Box>
   );
 };

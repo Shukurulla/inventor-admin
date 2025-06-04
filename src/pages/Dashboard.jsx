@@ -13,14 +13,6 @@ import {
   Cell,
   LineChart,
   Line,
-  AreaChart,
-  Area,
-  ComposedChart,
-  RadialBarChart,
-  RadialBar,
-  Legend,
-  ScatterChart,
-  Scatter,
 } from "recharts";
 import {
   ComputerDesktopIcon,
@@ -30,11 +22,7 @@ import {
   WrenchScrewdriverIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
-  BoltIcon,
-  ArrowTrendingUpIcon,
-  ChartBarIcon,
   ClockIcon,
-  CurrencyDollarIcon,
 } from "@heroicons/react/24/outline";
 import { dashboardApi } from "../api/dashboardApi";
 
@@ -52,14 +40,7 @@ const Dashboard = () => {
   const totalEquipment = equipmentResponse?.count || 0;
 
   // Статистические карточки
-  const StatCard = ({
-    title,
-    value,
-    icon: Icon,
-    gradient,
-    trend,
-    description,
-  }) => (
+  const StatCard = ({ title, value, icon: Icon, gradient, description }) => (
     <div
       className={`relative overflow-hidden rounded-2xl p-6 text-white transition-all duration-300 hover:scale-105 hover:shadow-2xl ${gradient}`}
     >
@@ -69,12 +50,6 @@ const Dashboard = () => {
           <p className="mt-2 text-3xl font-bold">{value}</p>
           {description && (
             <p className="mt-1 text-sm text-white/70">{description}</p>
-          )}
-          {trend && (
-            <div className="mt-2 flex items-center text-sm text-white/90">
-              <ArrowTrendingUpIcon className="mr-1 h-4 w-4" />
-              <span>{trend}% за месяц</span>
-            </div>
           )}
         </div>
         <div className="flex-shrink-0">
@@ -86,202 +61,78 @@ const Dashboard = () => {
     </div>
   );
 
-  // Данные для графиков
-  const equipmentByType = React.useMemo(() => {
-    if (!equipment || equipment.length === 0) return [];
-
-    const types = {};
-    equipment.forEach((item) => {
-      const typeName = item.type_data?.name || "Другое";
-      types[typeName] = (types[typeName] || 0) + 1;
-    });
-
-    const colors = [
-      "#3b82f6",
-      "#10b981",
-      "#f59e0b",
-      "#ef4444",
-      "#8b5cf6",
-      "#06b6d4",
-    ];
-    return Object.entries(types).map(([name, value], index) => ({
-      name,
-      value,
-      fill: colors[index % colors.length],
-    }));
-  }, [equipment]);
-
-  const equipmentByStatus = React.useMemo(() => {
-    if (!equipment || equipment.length === 0) return [];
-
-    const statuses = { NEW: 0, WORKING: 0, REPAIR: 0, DISPOSED: 0 };
-    equipment.forEach((item) => {
-      if (statuses.hasOwnProperty(item.status)) {
-        statuses[item.status]++;
-      }
-    });
-
-    return [
-      { name: "Новое", value: statuses.NEW, fill: "#10b981" },
-      { name: "Работает", value: statuses.WORKING, fill: "#3b82f6" },
-      { name: "Ремонт", value: statuses.REPAIR, fill: "#f59e0b" },
-      { name: "Списано", value: statuses.DISPOSED, fill: "#ef4444" },
-    ].filter((item) => item.value > 0);
-  }, [equipment]);
-
-  const monthlyStats = React.useMemo(() => {
-    const months = [
-      "Янв",
-      "Фев",
-      "Мар",
-      "Апр",
-      "Май",
-      "Июн",
-      "Июл",
-      "Авг",
-      "Сен",
-      "Окт",
-      "Ноя",
-      "Дек",
-    ];
-
-    // Группируем оборудование по месяцам создания
-    const equipmentByMonth = {};
-    equipment.forEach((item) => {
-      if (item.created_at) {
-        const date = new Date(item.created_at);
-        const monthKey = date.getMonth();
-        const monthName = months[monthKey];
-
-        if (!equipmentByMonth[monthName]) {
-          equipmentByMonth[monthName] = { новое: 0, ремонт: 0, списание: 0 };
-        }
-
-        if (item.status === "NEW") equipmentByMonth[monthName].новое++;
-        else if (item.status === "REPAIR") equipmentByMonth[monthName].ремонт++;
-        else if (item.status === "DISPOSED")
-          equipmentByMonth[monthName].списание++;
-      }
-    });
-
-    return months.map((month) => ({
-      month,
-      новое:
-        equipmentByMonth[month]?.новое || Math.floor(Math.random() * 10) + 2,
-      ремонт:
-        equipmentByMonth[month]?.ремонт || Math.floor(Math.random() * 5) + 1,
-      списание:
-        equipmentByMonth[month]?.списание || Math.floor(Math.random() * 3),
-      перемещения: Math.floor(Math.random() * 15) + 5,
-      затраты: Math.floor(Math.random() * 50000) + 20000,
-    }));
-  }, [equipment]);
-
-  const buildingStats = React.useMemo(() => {
-    if (!buildings || buildings.length === 0) return [];
-
-    return buildings.map((building) => {
-      // Находим комнаты в здании
-      const buildingRooms = rooms.filter(
-        (room) => room.building === building.id
-      );
-      // Находим оборудование в этих комнатах
-      const buildingEquipment = equipment.filter((item) =>
-        buildingRooms.some((room) => room.id === item.room)
-      );
-
-      return {
-        name:
-          building.name.length > 12
-            ? building.name.substring(0, 12) + "..."
-            : building.name,
-        оборудование: buildingEquipment.length,
-        кабинеты: buildingRooms.length,
-        стоимость:
-          buildingEquipment.length * 50000 + Math.floor(Math.random() * 100000),
-      };
-    });
-  }, [buildings, equipment, rooms]);
-
-  const weeklyActivity = React.useMemo(() => {
-    const days = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
-    return days.map((day) => ({
-      day,
-      активность: Math.floor(Math.random() * 100) + 20,
-      задачи: Math.floor(Math.random() * 50) + 10,
-    }));
-  }, []);
-
-  const departmentEfficiency = React.useMemo(() => {
-    if (!faculties || faculties.length === 0) return [];
+  // Fakultetlar bo'yicha equipment statistikasi
+  const facultyEquipmentStats = React.useMemo(() => {
+    if (!faculties.length || !equipment.length || !rooms.length) return [];
 
     return faculties.map((faculty) => {
-      // Находим комнаты факультета
-      const facultyRooms = rooms.filter(
-        (room) => room.building === faculty.building
-      );
-      // Находим оборудование факультета
+      // Bu fakultetga tegishli binolar va xonalarni topish
+      const facultyRooms = rooms.filter((room) => {
+        // Fakultet binosiga tegishli xonalar
+        return room.building === faculty.building;
+      });
+
+      // Bu xonalardagi barcha equipmentlarni topish
       const facultyEquipment = equipment.filter((item) =>
         facultyRooms.some((room) => room.id === item.room)
       );
 
-      const workingEquipment = facultyEquipment.filter(
+      // Status bo'yicha statistika
+      const newCount = facultyEquipment.filter(
+        (item) => item.status === "NEW"
+      ).length;
+      const workingCount = facultyEquipment.filter(
         (item) => item.status === "WORKING"
       ).length;
-      const efficiency =
-        facultyEquipment.length > 0
-          ? (workingEquipment / facultyEquipment.length) * 100
-          : 0;
+      const repairCount = facultyEquipment.filter(
+        (item) => item.status === "REPAIR"
+      ).length;
+      const disposedCount = facultyEquipment.filter(
+        (item) => item.status === "DISPOSED"
+      ).length;
 
       return {
         name:
-          faculty.name.length > 15
-            ? faculty.name.substring(0, 15) + "..."
+          faculty.name.length > 20
+            ? faculty.name.substring(0, 20) + "..."
             : faculty.name,
-        эффективность:
-          Math.round(efficiency) || Math.floor(Math.random() * 40) + 60,
-        оборудование: facultyEquipment.length,
+        jami: facultyEquipment.length,
+        yangi: newCount,
+        ishlaydi: workingCount,
+        tamirlash: repairCount,
+        eski: disposedCount,
       };
     });
   }, [faculties, equipment, rooms]);
 
-  const repairTimeline = React.useMemo(() => {
-    const weeks = ["1 нед", "2 нед", "3 нед", "4 нед"];
-    return weeks.map((week) => ({
-      week,
-      завершено: Math.floor(Math.random() * 20) + 5,
-      в_процессе: Math.floor(Math.random() * 15) + 3,
-      новые: Math.floor(Math.random() * 10) + 2,
-    }));
-  }, []);
+  // Barcha equipment statuslari uchun pie chart
+  const equipmentStatusData = React.useMemo(() => {
+    if (!equipment || equipment.length === 0) return [];
 
-  const costAnalysis = React.useMemo(() => {
-    const totalEquipmentCost = totalEquipment * 75000; // Примерная стоимость
-    return [
-      {
-        category: "Закупка",
-        amount: Math.round(totalEquipmentCost * 0.45),
-        percentage: 45,
-      },
-      {
-        category: "Ремонт",
-        amount: Math.round(totalEquipmentCost * 0.18),
-        percentage: 18,
-      },
-      {
-        category: "Обслуживание",
-        amount: Math.round(totalEquipmentCost * 0.22),
-        percentage: 22,
-      },
-      {
-        category: "Утилизация",
-        amount: Math.round(totalEquipmentCost * 0.15),
-        percentage: 15,
-      },
-    ];
-  }, [totalEquipment]);
+    const statuses = {
+      NEW: { count: 0, name: "Yangi", color: "#10b981" },
+      WORKING: { count: 0, name: "Ishlaydi", color: "#3b82f6" },
+      REPAIR: { count: 0, name: "Ta'mirlash", color: "#f59e0b" },
+      DISPOSED: { count: 0, name: "Eski", color: "#ef4444" },
+    };
 
-  // Вычисляем статистику для карточек
+    equipment.forEach((item) => {
+      if (statuses[item.status]) {
+        statuses[item.status].count++;
+      }
+    });
+
+    return Object.entries(statuses)
+      .filter(([, data]) => data.count > 0)
+      .map(([status, data]) => ({
+        name: data.name,
+        value: data.count,
+        fill: data.color,
+        percentage: ((data.count / equipment.length) * 100).toFixed(1),
+      }));
+  }, [equipment]);
+
+  // Hisoblangan statistikalar
   const workingCount = equipment.filter(
     (item) => item.status === "WORKING"
   ).length;
@@ -289,9 +140,9 @@ const Dashboard = () => {
     (item) => item.status === "REPAIR"
   ).length;
   const newCount = equipment.filter((item) => item.status === "NEW").length;
-  const disposedCount =
-    disposals?.length ||
-    equipment.filter((item) => item.status === "DISPOSED").length;
+  const disposedCount = equipment.filter(
+    (item) => item.status === "DISPOSED"
+  ).length;
 
   if (equipmentLoading) {
     return (
@@ -306,56 +157,50 @@ const Dashboard = () => {
       {/* Заголовок */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Панель управления
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900">Boshqaruv paneli</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Обзор системы управления инвентарем
+            Inventar boshqaruv tizimi umumiy ko'rinishi
           </p>
         </div>
         <div className="flex items-center space-x-2 text-sm text-gray-500">
           <ClockIcon className="h-4 w-4" />
-          <span>Обновлено: {new Date().toLocaleString("ru")}</span>
+          <span>Yangilangan: {new Date().toLocaleString("uz")}</span>
         </div>
       </div>
 
-      {/* Статистические карточки */}
+      {/* Asosiy statistikalar */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Всего оборудования"
+          title="Barcha jihozlar"
           value={totalEquipment}
           icon={ComputerDesktopIcon}
           gradient="bg-gradient-to-br from-blue-600 to-blue-700"
-          trend={12}
-          description="Единиц в системе"
+          description="Tizimdagi birliklar"
         />
         <StatCard
-          title="Зданий"
+          title="Binolar"
           value={buildings.length}
           icon={BuildingOfficeIcon}
           gradient="bg-gradient-to-br from-purple-600 to-purple-700"
-          trend={5}
-          description="Корпусов университета"
+          description="Universitet korpuslari"
         />
         <StatCard
-          title="Кабинетов"
+          title="Xonalar"
           value={rooms.length}
           icon={AcademicCapIcon}
           gradient="bg-gradient-to-br from-green-600 to-green-700"
-          trend={8}
-          description="Активных помещений"
+          description="Faol xonalar"
         />
         <StatCard
-          title="Факультетов"
+          title="Fakultetlar"
           value={faculties.length}
           icon={UsersIcon}
           gradient="bg-gradient-to-br from-orange-600 to-orange-700"
-          trend={3}
-          description="Учебных подразделений"
+          description="O'quv bo'limlari"
         />
       </div>
 
-      {/* Дополнительные метрики */}
+      {/* Status ko'rsatkichlari */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-gray-200 bg-white p-6">
           <div className="flex items-center">
@@ -363,7 +208,7 @@ const Dashboard = () => {
               <WrenchScrewdriverIcon className="h-6 w-6 text-orange-600" />
             </div>
             <div className="ml-4 flex-1">
-              <p className="text-sm font-medium text-gray-500">На ремонте</p>
+              <p className="text-sm font-medium text-gray-500">Ta'mirlashda</p>
               <p className="text-2xl font-semibold text-gray-900">
                 {repairCount}
               </p>
@@ -403,7 +248,7 @@ const Dashboard = () => {
               <CheckCircleIcon className="h-6 w-6 text-green-600" />
             </div>
             <div className="ml-4 flex-1">
-              <p className="text-sm font-medium text-gray-500">Работает</p>
+              <p className="text-sm font-medium text-gray-500">Ishlaydi</p>
               <p className="text-2xl font-semibold text-gray-900">
                 {workingCount}
               </p>
@@ -443,7 +288,7 @@ const Dashboard = () => {
               <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
             </div>
             <div className="ml-4 flex-1">
-              <p className="text-sm font-medium text-gray-500">Списано</p>
+              <p className="text-sm font-medium text-gray-500">Eskirgan</p>
               <p className="text-2xl font-semibold text-gray-900">
                 {disposedCount}
               </p>
@@ -480,16 +325,11 @@ const Dashboard = () => {
         <div className="rounded-xl border border-gray-200 bg-white p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <BoltIcon className="h-6 w-6 text-blue-600" />
+              <CheckCircleIcon className="h-6 w-6 text-blue-600" />
             </div>
             <div className="ml-4 flex-1">
-              <p className="text-sm font-medium text-gray-500">Эффективность</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {totalEquipment > 0
-                  ? Math.round((workingCount / totalEquipment) * 100)
-                  : 0}
-                %
-              </p>
+              <p className="text-sm font-medium text-gray-500">Yangi</p>
+              <p className="text-2xl font-semibold text-gray-900">{newCount}</p>
             </div>
           </div>
           <div className="mt-4">
@@ -501,7 +341,7 @@ const Dashboard = () => {
                     style={{
                       width: `${
                         totalEquipment > 0
-                          ? (workingCount / totalEquipment) * 100
+                          ? (newCount / totalEquipment) * 100
                           : 0
                       }%`,
                     }}
@@ -509,12 +349,11 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="ml-4">
-                <span className="text-sm text-green-600 font-medium">
-                  {totalEquipment > 0 && workingCount / totalEquipment > 0.8
-                    ? "Отлично"
-                    : totalEquipment > 0 && workingCount / totalEquipment > 0.6
-                    ? "Хорошо"
-                    : "Средне"}
+                <span className="text-sm text-gray-500">
+                  {totalEquipment > 0
+                    ? Math.round((newCount / totalEquipment) * 100)
+                    : 0}
+                  %
                 </span>
               </div>
             </div>
@@ -522,230 +361,150 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Основные графики */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Статистика по месяцам */}
-        <div className="lg:col-span-2">
-          <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Статистика по месяцам
-                </h3>
-                <p className="text-sm text-gray-500">
-                  Динамика изменений в системе
-                </p>
-              </div>
-              <ChartBarIcon className="h-6 w-6 text-gray-400" />
-            </div>
-            <ResponsiveContainer width="100%" height={350}>
-              <ComposedChart data={monthlyStats}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="month" stroke="#64748b" fontSize={12} />
-                <YAxis stroke="#64748b" fontSize={12} />
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                    boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
-                  }}
-                />
-                <Bar dataKey="новое" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="ремонт" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                <Line
-                  type="monotone"
-                  dataKey="перемещения"
-                  stroke="#8b5cf6"
-                  strokeWidth={3}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Типы оборудования */}
+      {/* Asosiy diagrammalar */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Fakultetlar bo'yicha statistika */}
         <div className="rounded-xl border border-gray-200 bg-white p-6">
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-900">
-              Типы оборудования
-            </h3>
-            <p className="text-sm text-gray-500">Распределение по категориям</p>
-          </div>
-          <ResponsiveContainer width="100%" height={350}>
-            <PieChart>
-              <Pie
-                data={equipmentByType}
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                dataKey="value"
-                label={({ name, percent }) =>
-                  `${name} ${(percent * 100).toFixed(0)}%`
-                }
-                labelLine={false}
-              />
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Дополнительные аналитические графики */}
-      {buildingStats.length > 0 && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {/* Статистика по зданиям */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Статистика по зданиям
-              </h3>
-              <p className="text-sm text-gray-500">
-                Распределение оборудования по корпусам
-              </p>
-            </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={buildingStats} layout="horizontal">
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis type="number" stroke="#64748b" fontSize={12} />
-                <YAxis
-                  dataKey="name"
-                  type="category"
-                  stroke="#64748b"
-                  width={80}
-                  fontSize={12}
-                />
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                    boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
-                  }}
-                />
-                <Bar
-                  dataKey="оборудование"
-                  fill="#3b82f6"
-                  radius={[0, 4, 4, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Статус оборудования - радиальная диаграмма */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Статус оборудования
-              </h3>
-              <p className="text-sm text-gray-500">Текущее состояние техники</p>
-            </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <RadialBarChart
-                cx="50%"
-                cy="50%"
-                innerRadius="20%"
-                outerRadius="90%"
-                data={equipmentByStatus}
-              >
-                <RadialBar dataKey="value" cornerRadius={10} />
-                <Legend iconSize={8} />
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                    boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
-                  }}
-                />
-              </RadialBarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
-
-      {/* Анализ затрат */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              Анализ затрат
+              Fakultetlar bo'yicha jihozlar
             </h3>
             <p className="text-sm text-gray-500">
-              Распределение расходов по категориям
+              Har bir fakultetdagi jihozlar soni va holati
             </p>
           </div>
-          <CurrencyDollarIcon className="h-6 w-6 text-gray-400" />
+          <ResponsiveContainer width="100%" height={400}>
+            <BarChart
+              data={facultyEquipmentStats}
+              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis
+                dataKey="name"
+                stroke="#64748b"
+                fontSize={12}
+                angle={-45}
+                textAnchor="end"
+                height={80}
+              />
+              <YAxis stroke="#64748b" fontSize={12} />
+              <Tooltip
+                contentStyle={{
+                  borderRadius: "12px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
+                }}
+              />
+              <Bar dataKey="yangi" stackId="a" fill="#10b981" name="Yangi" />
+              <Bar
+                dataKey="ishlaydi"
+                stackId="a"
+                fill="#3b82f6"
+                name="Ishlaydi"
+              />
+              <Bar
+                dataKey="tamirlash"
+                stackId="a"
+                fill="#f59e0b"
+                name="Ta'mirlash"
+              />
+              <Bar dataKey="eski" stackId="a" fill="#ef4444" name="Eski" />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {costAnalysis.map((item, index) => (
-            <div key={index} className="rounded-lg border border-gray-100 p-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-gray-600">
-                  {item.category}
-                </p>
-                <span className="text-sm text-gray-500">
-                  {item.percentage}%
-                </span>
-              </div>
-              <p className="mt-1 text-xl font-semibold text-gray-900">
-                {item.amount.toLocaleString("ru")} ₽
-              </p>
-              <div className="mt-2">
-                <div className="h-2 rounded-full bg-gray-200">
+
+        {/* Barcha jihozlar holati - donut chart */}
+        <div className="rounded-xl border border-gray-200 bg-white p-6">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Jihozlar holati
+            </h3>
+            <p className="text-sm text-gray-500">
+              Barcha jihozlarning umumiy holati
+            </p>
+          </div>
+          <div className="flex flex-col items-center">
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={equipmentStatusData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={120}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {equipmentStatusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value, name) => [`${value} ta`, name]}
+                  contentStyle={{
+                    borderRadius: "12px",
+                    border: "1px solid #e2e8f0",
+                    boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+
+            {/* Legend */}
+            <div className="grid grid-cols-2 gap-4 mt-4 w-full">
+              {equipmentStatusData.map((entry, index) => (
+                <div key={index} className="flex items-center">
                   <div
-                    className="h-2 rounded-full bg-blue-600"
-                    style={{ width: `${item.percentage}%` }}
+                    className="w-4 h-4 rounded-full mr-2"
+                    style={{ backgroundColor: entry.fill }}
                   />
+                  <span className="text-sm text-gray-600">
+                    {entry.name}: {entry.value} ({entry.percentage}%)
+                  </span>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
 
-      {/* Последние активности */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Последние активности
-          </h3>
-          <p className="text-sm text-gray-500">
-            Обзор недавних изменений в системе
-          </p>
+      {/* Qo'shimcha ma'lumotlar */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+        <div className="rounded-lg bg-green-50 p-6 border border-green-200">
+          <div className="flex items-center">
+            <CheckCircleIcon className="h-10 w-10 text-green-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-green-800">
+                Yangi jihozlar
+              </p>
+              <p className="text-3xl font-bold text-green-900">{newCount}</p>
+              <p className="text-xs text-green-600">birlik qo'shildi</p>
+            </div>
+          </div>
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-lg bg-green-50 p-4 border border-green-200">
-            <div className="flex items-center">
-              <CheckCircleIcon className="h-8 w-8 text-green-600" />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-green-800">
-                  Новое оборудование
-                </p>
-                <p className="text-2xl font-bold text-green-900">{newCount}</p>
-                <p className="text-xs text-green-600">единиц добавлено</p>
-              </div>
+
+        <div className="rounded-lg bg-orange-50 p-6 border border-orange-200">
+          <div className="flex items-center">
+            <WrenchScrewdriverIcon className="h-10 w-10 text-orange-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-orange-800">
+                Ta'mirlashda
+              </p>
+              <p className="text-3xl font-bold text-orange-900">
+                {repairCount}
+              </p>
+              <p className="text-xs text-orange-600">birlik jarayonda</p>
             </div>
           </div>
-          <div className="rounded-lg bg-orange-50 p-4 border border-orange-200">
-            <div className="flex items-center">
-              <WrenchScrewdriverIcon className="h-8 w-8 text-orange-600" />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-orange-800">В ремонте</p>
-                <p className="text-2xl font-bold text-orange-900">
-                  {repairCount}
-                </p>
-                <p className="text-xs text-orange-600">единиц в процессе</p>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-lg bg-red-50 p-4 border border-red-200">
-            <div className="flex items-center">
-              <ExclamationTriangleIcon className="h-8 w-8 text-red-600" />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-red-800">Утилизация</p>
-                <p className="text-2xl font-bold text-red-900">
-                  {disposedCount}
-                </p>
-                <p className="text-xs text-red-600">единиц списано</p>
-              </div>
+        </div>
+
+        <div className="rounded-lg bg-red-50 p-6 border border-red-200">
+          <div className="flex items-center">
+            <ExclamationTriangleIcon className="h-10 w-10 text-red-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-red-800">Eskirgan</p>
+              <p className="text-3xl font-bold text-red-900">{disposedCount}</p>
+              <p className="text-xs text-red-600">birlik hisobdan chiqarildi</p>
             </div>
           </div>
         </div>

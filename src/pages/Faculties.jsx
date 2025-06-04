@@ -30,6 +30,7 @@ import {
   Delete as DeleteIcon,
 } from "@mui/icons-material";
 import { dashboardApi } from "../api/dashboardApi";
+import ConfirmationModal from "../components/ConfirmationModal";
 
 const Faculties = () => {
   const { data: faculties = [], isLoading } =
@@ -44,6 +45,12 @@ const Faculties = () => {
     mode: "create",
     data: null,
   });
+  const [confirmModal, setConfirmModal] = React.useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
   const [snackbar, setSnackbar] = React.useState({
     open: false,
     message: "",
@@ -54,13 +61,34 @@ const Faculties = () => {
     building: "",
   });
 
+  const showConfirmation = (title, message, onConfirm) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal({
+          isOpen: false,
+          title: "",
+          message: "",
+          onConfirm: null,
+        });
+      },
+    });
+  };
+
+  const closeConfirmation = () => {
+    setConfirmModal({ isOpen: false, title: "", message: "", onConfirm: null });
+  };
+
   const handleFacultySubmit = async () => {
     try {
       if (facultyModal.mode === "create") {
         await createFaculty(facultyForm).unwrap();
         setSnackbar({
           open: true,
-          message: "Факультет создан успешно!",
+          message: "Fakultet muvaffaqiyatli yaratildi!",
           severity: "success",
         });
       } else {
@@ -70,35 +98,43 @@ const Faculties = () => {
         }).unwrap();
         setSnackbar({
           open: true,
-          message: "Факультет обновлен успешно!",
+          message: "Fakultet muvaffaqiyatli yangilandi!",
           severity: "success",
         });
       }
+      setFacultyModal({ open: false, mode: "create", data: null });
       setFacultyForm({ name: "", building: "" });
     } catch (error) {
       setSnackbar({
         open: true,
-        message: "Ошибка при сохранении",
+        message: "Saqlashda xatolik yuz berdi",
         severity: "error",
       });
     }
   };
 
-  const handleFacultyDelete = async (id) => {
-    try {
-      await deleteFaculty(id).unwrap();
-      setSnackbar({
-        open: true,
-        message: "Факультет удален!",
-        severity: "info",
-      });
-    } catch (error) {
-      setSnackbar({
-        open: true,
-        message: "Ошибка при удалении",
-        severity: "error",
-      });
-    }
+  const handleFacultyDelete = async (faculty) => {
+    const building = buildings.find((b) => b.id === faculty.building);
+    showConfirmation(
+      "Fakultetni o'chirish",
+      `"${faculty.name}" fakultetini (${building?.name}) o'chirishni tasdiqlaysizmi? Bu amal bekor qilib bo'lmaydi.`,
+      async () => {
+        try {
+          await deleteFaculty(faculty.id).unwrap();
+          setSnackbar({
+            open: true,
+            message: "Fakultet o'chirildi!",
+            severity: "info",
+          });
+        } catch (error) {
+          setSnackbar({
+            open: true,
+            message: "O'chirishda xatolik yuz berdi",
+            severity: "error",
+          });
+        }
+      }
+    );
   };
 
   const openFacultyModal = (mode, faculty = null) => {
@@ -111,7 +147,7 @@ const Faculties = () => {
   };
 
   if (isLoading) {
-    return <Typography>Загрузка...</Typography>;
+    return <Typography>Yuklanmoqda...</Typography>;
   }
 
   return (
@@ -125,7 +161,7 @@ const Faculties = () => {
         }}
       >
         <Typography variant="h4" fontWeight="bold">
-          Управление факультетами
+          Fakultetlarni boshqarish
         </Typography>
         <Button
           variant="contained"
@@ -134,7 +170,7 @@ const Faculties = () => {
           size="large"
           sx={{ borderRadius: 2 }}
         >
-          Добавить факультет
+          Fakultet qo'shish
         </Button>
       </Box>
 
@@ -143,42 +179,54 @@ const Faculties = () => {
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: "#f8fafc" }}>
-                <TableCell sx={{ fontWeight: 600 }}>Название</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Здание</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Nomi</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Bino</TableCell>
                 <TableCell align="center" sx={{ fontWeight: 600 }}>
-                  Действия
+                  Amallar
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {faculties.map((faculty) => (
-                <TableRow
-                  key={faculty.id}
-                  hover
-                  sx={{ "&:hover": { backgroundColor: "#f8fafc" } }}
-                >
-                  <TableCell sx={{ fontWeight: 500 }}>{faculty.name}</TableCell>
-                  <TableCell>
-                    {buildings.find((b) => b.id === faculty.building)?.name ||
-                      "Не указано"}
-                  </TableCell>
-                  <TableCell align="center">
-                    <IconButton
-                      onClick={() => openFacultyModal("edit", faculty)}
-                      color="primary"
-                      sx={{ mr: 1 }}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => handleFacultyDelete(faculty.id)}
-                      color="error"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+              {faculties.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
+                    <Typography color="textSecondary">
+                      Hech qanday fakultet topilmadi
+                    </Typography>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                faculties.map((faculty) => (
+                  <TableRow
+                    key={faculty.id}
+                    hover
+                    sx={{ "&:hover": { backgroundColor: "#f8fafc" } }}
+                  >
+                    <TableCell sx={{ fontWeight: 500 }}>
+                      {faculty.name}
+                    </TableCell>
+                    <TableCell>
+                      {buildings.find((b) => b.id === faculty.building)?.name ||
+                        "Ko'rsatilmagan"}
+                    </TableCell>
+                    <TableCell align="center">
+                      <IconButton
+                        onClick={() => openFacultyModal("edit", faculty)}
+                        color="primary"
+                        sx={{ mr: 1 }}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => handleFacultyDelete(faculty)}
+                        color="error"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -194,32 +242,33 @@ const Faculties = () => {
       >
         <DialogTitle sx={{ fontWeight: 600 }}>
           {facultyModal.mode === "create"
-            ? "Создать факультет"
-            : "Редактировать факультет"}
+            ? "Fakultet yaratish"
+            : "Fakultetni tahrirlash"}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 2 }}>
             <TextField
-              label="Название факультета"
+              label="Fakultet nomi"
               value={facultyForm.name}
               onChange={(e) =>
                 setFacultyForm({ ...facultyForm, name: e.target.value })
               }
               fullWidth
               required
+              placeholder="Fakultet nomini kiriting"
             />
             <FormControl fullWidth required>
-              <InputLabel>Здание</InputLabel>
+              <InputLabel>Bino</InputLabel>
               <Select
                 value={facultyForm.building}
                 onChange={(e) =>
                   setFacultyForm({ ...facultyForm, building: e.target.value })
                 }
-                label="Здание"
+                label="Bino"
               >
                 {buildings.map((building) => (
                   <MenuItem key={building.id} value={building.id}>
-                    {building.name}
+                    {building.name} - {building.address}
                   </MenuItem>
                 ))}
               </Select>
@@ -230,14 +279,14 @@ const Faculties = () => {
           <Button
             onClick={() => setFacultyModal({ ...facultyModal, open: false })}
           >
-            Отмена
+            Bekor qilish
           </Button>
           <Button
             onClick={handleFacultySubmit}
             variant="contained"
             sx={{ borderRadius: 2 }}
           >
-            {facultyModal.mode === "create" ? "Создать" : "Сохранить"}
+            {facultyModal.mode === "create" ? "Yaratish" : "Saqlash"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -255,6 +304,16 @@ const Faculties = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirmation}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type="danger"
+      />
     </Box>
   );
 };

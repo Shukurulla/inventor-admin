@@ -5,8 +5,85 @@ import {
   PencilIcon,
   TrashIcon,
   BuildingOfficeIcon,
+  ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import { dashboardApi } from "../api/dashboardApi";
+
+// Confirmation Modal komponenti
+const ConfirmationModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  type = "danger",
+}) => {
+  if (!isOpen) return null;
+
+  const typeStyles = {
+    danger: {
+      iconBg: "bg-red-100",
+      iconColor: "text-red-600",
+      buttonBg: "bg-red-600 hover:bg-red-700 focus:ring-red-500",
+      buttonText: "O'chirish",
+    },
+    warning: {
+      iconBg: "bg-yellow-100",
+      iconColor: "text-yellow-600",
+      buttonBg: "bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500",
+      buttonText: "Ha, davom etish",
+    },
+  };
+
+  const currentStyle = typeStyles[type] || typeStyles.danger;
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div
+          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+          onClick={onClose}
+        />
+        <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full transform transition-all">
+          <div className="px-6 py-6">
+            <div className="flex items-center">
+              <div
+                className={`mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full ${currentStyle.iconBg}`}
+              >
+                <ExclamationTriangleIcon
+                  className={`h-6 w-6 ${currentStyle.iconColor}`}
+                  aria-hidden="true"
+                />
+              </div>
+              <div className="ml-4 text-left">
+                <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">{message}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="bg-gray-50 px-6 py-4 flex flex-row-reverse gap-3 rounded-b-xl">
+            <button
+              type="button"
+              onClick={onConfirm}
+              className={`inline-flex justify-center rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${currentStyle.buttonBg}`}
+            >
+              {currentStyle.buttonText}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex justify-center rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+            >
+              Bekor qilish
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Buildings = () => {
   const { data: buildings = [], isLoading } =
@@ -19,6 +96,12 @@ const Buildings = () => {
     open: false,
     mode: "create",
     data: null,
+  });
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
   });
   const [notification, setNotification] = useState({
     show: false,
@@ -39,35 +122,60 @@ const Buildings = () => {
     );
   };
 
+  const showConfirmation = (title, message, onConfirm) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal({
+          isOpen: false,
+          title: "",
+          message: "",
+          onConfirm: null,
+        });
+      },
+    });
+  };
+
+  const closeConfirmation = () => {
+    setConfirmModal({ isOpen: false, title: "", message: "", onConfirm: null });
+  };
+
   const handleBuildingSubmit = async (e) => {
     e.preventDefault();
     try {
       if (buildingModal.mode === "create") {
         await createBuilding(buildingForm).unwrap();
-        showNotification("Здание создано успешно!");
+        showNotification("Bino muvaffaqiyatli yaratildi!");
       } else {
         await updateBuilding({
           id: buildingModal.data.id,
           ...buildingForm,
         }).unwrap();
-        showNotification("Здание обновлено успешно!");
+        showNotification("Bino muvaffaqiyatli yangilandi!");
       }
       setBuildingModal({ open: false, mode: "create", data: null });
       setBuildingForm({ name: "", address: "", university: 1 });
     } catch (error) {
-      showNotification("Ошибка при сохранении", "error");
+      showNotification("Saqlashda xatolik yuz berdi", "error");
     }
   };
 
-  const handleBuildingDelete = async (id) => {
-    if (!window.confirm("Вы уверены, что хотите удалить это здание?")) return;
-
-    try {
-      await deleteBuilding(id).unwrap();
-      showNotification("Здание удалено!", "info");
-    } catch (error) {
-      showNotification("Ошибка при удалении", "error");
-    }
+  const handleBuildingDelete = async (building) => {
+    showConfirmation(
+      "Binoni o'chirish",
+      `"${building.name}" binoni o'chirishni tasdiqlaysizmi? Bu amal bekor qilib bo'lmaydi.`,
+      async () => {
+        try {
+          await deleteBuilding(building.id).unwrap();
+          showNotification("Bino o'chirildi!", "info");
+        } catch (error) {
+          showNotification("O'chirishda xatolik yuz berdi", "error");
+        }
+      }
+    );
   };
 
   const openBuildingModal = (mode, building = null) => {
@@ -97,10 +205,10 @@ const Buildings = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Управление зданиями
+            Binolarni boshqarish
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Управляйте зданиями университета
+            Universitet binolarini boshqaring
           </p>
         </div>
         <button
@@ -108,7 +216,7 @@ const Buildings = () => {
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
         >
           <PlusIcon className="h-4 w-4 mr-2" />
-          Добавить здание
+          Bino qo'shish
         </button>
       </div>
 
@@ -144,13 +252,13 @@ const Buildings = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Название
+                  Nomi
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Адрес
+                  Manzil
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Действия
+                  Amallar
                 </th>
               </tr>
             </thead>
@@ -182,14 +290,14 @@ const Buildings = () => {
                       <button
                         onClick={() => openBuildingModal("edit", building)}
                         className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors"
-                        title="Редактировать"
+                        title="Tahrirlash"
                       >
                         <PencilIcon className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => handleBuildingDelete(building.id)}
+                        onClick={() => handleBuildingDelete(building)}
                         className="text-red-600 hover:text-red-900 p-1 rounded transition-colors"
-                        title="Удалить"
+                        title="O'chirish"
                       >
                         <TrashIcon className="h-4 w-4" />
                       </button>
@@ -217,14 +325,14 @@ const Buildings = () => {
                 <div className="px-6 py-4 border-b border-gray-200">
                   <h3 className="text-lg font-semibold text-gray-900">
                     {buildingModal.mode === "create"
-                      ? "Создать здание"
-                      : "Редактировать здание"}
+                      ? "Bino yaratish"
+                      : "Binoni tahrirlash"}
                   </h3>
                 </div>
                 <div className="px-6 py-4 space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Название здания *
+                      Bino nomi *
                     </label>
                     <input
                       type="text"
@@ -237,11 +345,12 @@ const Buildings = () => {
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                      placeholder="Bino nomini kiriting"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Адрес *
+                      Manzil *
                     </label>
                     <input
                       type="text"
@@ -254,6 +363,7 @@ const Buildings = () => {
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                      placeholder="Bino manzilini kiriting"
                     />
                   </div>
                 </div>
@@ -265,13 +375,13 @@ const Buildings = () => {
                     }
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                   >
-                    Отмена
+                    Bekor qilish
                   </button>
                   <button
                     type="submit"
                     className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                   >
-                    {buildingModal.mode === "create" ? "Создать" : "Сохранить"}
+                    {buildingModal.mode === "create" ? "Yaratish" : "Saqlash"}
                   </button>
                 </div>
               </form>
@@ -279,6 +389,16 @@ const Buildings = () => {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirmation}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type="danger"
+      />
     </div>
   );
 };

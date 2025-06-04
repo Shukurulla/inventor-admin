@@ -12,7 +12,90 @@ import {
   XMarkIcon,
   ChevronRightIcon,
   ArrowRightOnRectangleIcon,
+  ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
+
+// Confirmation Modal komponenti
+const ConfirmationModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  type = "danger",
+}) => {
+  if (!isOpen) return null;
+
+  const typeStyles = {
+    danger: {
+      iconBg: "bg-red-100",
+      iconColor: "text-red-600",
+      buttonBg: "bg-red-600 hover:bg-red-700 focus:ring-red-500",
+      buttonText: "Tasdiqlash",
+    },
+    warning: {
+      iconBg: "bg-yellow-100",
+      iconColor: "text-yellow-600",
+      buttonBg: "bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500",
+      buttonText: "Ha, davom etish",
+    },
+    info: {
+      iconBg: "bg-blue-100",
+      iconColor: "text-blue-600",
+      buttonBg: "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500",
+      buttonText: "Tasdiqlash",
+    },
+  };
+
+  const currentStyle = typeStyles[type] || typeStyles.danger;
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div
+          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+          onClick={onClose}
+        />
+        <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full transform transition-all">
+          <div className="px-6 py-6">
+            <div className="flex items-center">
+              <div
+                className={`mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full ${currentStyle.iconBg}`}
+              >
+                <ExclamationTriangleIcon
+                  className={`h-6 w-6 ${currentStyle.iconColor}`}
+                  aria-hidden="true"
+                />
+              </div>
+              <div className="ml-4 text-left">
+                <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">{message}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="bg-gray-50 px-6 py-4 flex flex-row-reverse gap-3 rounded-b-xl">
+            <button
+              type="button"
+              onClick={onConfirm}
+              className={`inline-flex justify-center rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${currentStyle.buttonBg}`}
+            >
+              {currentStyle.buttonText}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex justify-center rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+            >
+              Bekor qilish
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Layout = () => {
   const navigate = useNavigate();
@@ -20,19 +103,62 @@ const Layout = () => {
   const dispatch = useDispatch();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    type: "danger",
+  });
 
   const menuItems = [
-    { path: "/dashboard", text: "Панель управления", icon: ChartBarIcon },
-    { path: "/users", text: "Пользователи", icon: UsersIcon },
-    { path: "/buildings", text: "Здания", icon: BuildingOfficeIcon },
-    { path: "/floors", text: "Этажи", icon: HomeIcon },
-    { path: "/faculties", text: "Факультеты", icon: AcademicCapIcon },
-    { path: "/rooms", text: "Кабинеты", icon: HomeIcon },
+    { path: "/dashboard", text: "Boshqaruv paneli", icon: ChartBarIcon },
+    { path: "/users", text: "Foydalanuvchilar", icon: UsersIcon },
+    { path: "/buildings", text: "Binolar", icon: BuildingOfficeIcon },
+    { path: "/floors", text: "Qavatlar", icon: HomeIcon },
+    { path: "/faculties", text: "Fakultetlar", icon: AcademicCapIcon },
+    { path: "/rooms", text: "Xonalar", icon: HomeIcon },
   ];
 
+  const showConfirmation = (title, message, onConfirm, type = "danger") => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal({
+          isOpen: false,
+          title: "",
+          message: "",
+          onConfirm: null,
+          type: "danger",
+        });
+      },
+      type,
+    });
+  };
+
+  const closeConfirmation = () => {
+    setConfirmModal({
+      isOpen: false,
+      title: "",
+      message: "",
+      onConfirm: null,
+      type: "danger",
+    });
+  };
+
   const handleLogout = () => {
-    dispatch({ type: "auth/logout" });
-    navigate("/login");
+    showConfirmation(
+      "Chiqish tasdiqi",
+      "Haqiqatan ham tizimdan chiqmoqchimisiz?",
+      () => {
+        dispatch({ type: "auth/logout" });
+        navigate("/login");
+      },
+      "warning"
+    );
   };
 
   return (
@@ -180,7 +306,7 @@ const Layout = () => {
             <div className="relative flex flex-1 items-center">
               <h1 className="text-lg font-semibold text-gray-900">
                 {menuItems.find((item) => item.path === location.pathname)
-                  ?.text || "Панель управления"}
+                  ?.text || "Boshqaruv paneli"}
               </h1>
             </div>
             <div className="flex items-center gap-x-4 lg:gap-x-6">
@@ -191,24 +317,26 @@ const Layout = () => {
                   className="-m-1.5 flex items-center p-1.5"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                 >
-                  <span className="sr-only">Открыть пользовательское меню</span>
+                  <span className="sr-only">
+                    Foydalanuvchi menyusini ochish
+                  </span>
                   <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-                    <span className="text-white font-semibold text-sm">А</span>
+                    <span className="text-white font-semibold text-sm">A</span>
                   </div>
                   <span className="hidden lg:flex lg:items-center">
                     <span className="ml-4 text-sm font-semibold leading-6 text-gray-900">
-                      Администратор
+                      Administrator
                     </span>
                   </span>
                 </button>
                 {userMenuOpen && (
-                  <div className="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5">
+                  <div className="absolute right-0 z-10 mt-2.5 w-48 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5">
                     <button
                       onClick={handleLogout}
                       className="flex w-full px-3 py-1 text-sm leading-6 text-gray-900 hover:bg-gray-50 items-center"
                     >
                       <ArrowRightOnRectangleIcon className="mr-2 h-4 w-4" />
-                      Выйти
+                      Tizimdan chiqish
                     </button>
                   </div>
                 )}
@@ -224,6 +352,16 @@ const Layout = () => {
           <Outlet />
         </div>
       </main>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirmation}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type={confirmModal.type}
+      />
     </div>
   );
 };
