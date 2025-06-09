@@ -14,8 +14,9 @@ import {
   ArrowRightOnRectangleIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
+import { Logo } from "../../public";
 
-// Confirmation Modal komponenti
+// Confirmation Modal компонент
 const ConfirmationModal = ({
   isOpen,
   onClose,
@@ -31,19 +32,19 @@ const ConfirmationModal = ({
       iconBg: "bg-red-100",
       iconColor: "text-red-600",
       buttonBg: "bg-red-600 hover:bg-red-700 focus:ring-red-500",
-      buttonText: "Tasdiqlash",
+      buttonText: "Подтвердить",
     },
     warning: {
       iconBg: "bg-yellow-100",
       iconColor: "text-yellow-600",
       buttonBg: "bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500",
-      buttonText: "Ha, davom etish",
+      buttonText: "Да, продолжить",
     },
     info: {
       iconBg: "bg-blue-100",
       iconColor: "text-blue-600",
       buttonBg: "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500",
-      buttonText: "Tasdiqlash",
+      buttonText: "Подтвердить",
     },
   };
 
@@ -88,7 +89,7 @@ const ConfirmationModal = ({
               onClick={onClose}
               className="inline-flex justify-center rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
             >
-              Bekor qilish
+              Отменить
             </button>
           </div>
         </div>
@@ -112,12 +113,12 @@ const Layout = () => {
   });
 
   const menuItems = [
-    { path: "/dashboard", text: "Boshqaruv paneli", icon: ChartBarIcon },
-    { path: "/users", text: "Foydalanuvchilar", icon: UsersIcon },
-    { path: "/buildings", text: "Binolar", icon: BuildingOfficeIcon },
-    { path: "/floors", text: "Qavatlar", icon: HomeIcon },
-    { path: "/faculties", text: "Fakultetlar", icon: AcademicCapIcon },
-    { path: "/rooms", text: "Xonalar", icon: HomeIcon },
+    { path: "/dashboard", text: "Панель управления", icon: ChartBarIcon },
+    { path: "/users", text: "Пользователи", icon: UsersIcon },
+    { path: "/buildings", text: "Здания", icon: BuildingOfficeIcon },
+    { path: "/floors", text: "Этажи", icon: HomeIcon },
+    { path: "/faculties", text: "Факультеты", icon: AcademicCapIcon },
+    { path: "/rooms", text: "Кабинеты", icon: HomeIcon },
   ];
 
   const showConfirmation = (title, message, onConfirm, type = "danger") => {
@@ -151,8 +152,8 @@ const Layout = () => {
 
   const handleLogout = () => {
     showConfirmation(
-      "Chiqish tasdiqi",
-      "Haqiqatan ham tizimdan chiqmoqchimisiz?",
+      "Подтверждение выхода",
+      "Вы действительно хотите выйти из системы?",
       () => {
         dispatch({ type: "auth/logout" });
         navigate("/login");
@@ -167,14 +168,7 @@ const Layout = () => {
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-72 lg:flex-col">
         <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6 pb-4">
           <div className="flex h-16 shrink-0 items-center">
-            <div className="flex items-center">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-                <span className="text-white font-bold text-sm">IM</span>
-              </div>
-              <span className="ml-3 text-xl font-bold text-gray-900">
-                InventMaster
-              </span>
-            </div>
+            <img src={Logo} alt="" />
           </div>
           <nav className="flex flex-1 flex-col">
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
@@ -306,7 +300,7 @@ const Layout = () => {
             <div className="relative flex flex-1 items-center">
               <h1 className="text-lg font-semibold text-gray-900">
                 {menuItems.find((item) => item.path === location.pathname)
-                  ?.text || "Boshqaruv paneli"}
+                  ?.text || "Панель управления"}
               </h1>
             </div>
             <div className="flex items-center gap-x-4 lg:gap-x-6">
@@ -317,15 +311,13 @@ const Layout = () => {
                   className="-m-1.5 flex items-center p-1.5"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                 >
-                  <span className="sr-only">
-                    Foydalanuvchi menyusini ochish
-                  </span>
+                  <span className="sr-only">Открыть меню пользователя</span>
                   <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
                     <span className="text-white font-semibold text-sm">A</span>
                   </div>
                   <span className="hidden lg:flex lg:items-center">
                     <span className="ml-4 text-sm font-semibold leading-6 text-gray-900">
-                      Administrator
+                      Администратор
                     </span>
                   </span>
                 </button>
@@ -336,7 +328,7 @@ const Layout = () => {
                       className="flex w-full px-3 py-1 text-sm leading-6 text-gray-900 hover:bg-gray-50 items-center"
                     >
                       <ArrowRightOnRectangleIcon className="mr-2 h-4 w-4" />
-                      Tizimdan chiqish
+                      Выйти из системы
                     </button>
                   </div>
                 )}

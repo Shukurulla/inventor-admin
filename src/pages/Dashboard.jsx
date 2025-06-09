@@ -30,14 +30,16 @@ const Dashboard = () => {
   const { data: buildings = [] } = dashboardApi.useGetBuildingsQuery();
   const { data: faculties = [] } = dashboardApi.useGetFacultiesQuery();
   const { data: rooms = [] } = dashboardApi.useGetRoomsQuery();
-  const { data: equipmentResponse, isLoading: equipmentLoading } =
-    dashboardApi.useGetEquipmentQuery();
+
+  // Используем API для моего оборудования
+  const { data: myEquipment = [], isLoading: equipmentLoading } =
+    dashboardApi.useGetMyEquipmentQuery();
+
   const { data: repairs = [] } = dashboardApi.useGetRepairsQuery();
   const { data: disposals = [] } = dashboardApi.useGetDisposalsQuery();
 
-  // Equipment data with pagination handling
-  const equipment = equipmentResponse?.results || [];
-  const totalEquipment = equipmentResponse?.count || 0;
+  // Общее количество оборудования
+  const totalEquipment = myEquipment.length;
 
   // Статистические карточки
   const StatCard = ({ title, value, icon: Icon, gradient, description }) => (
@@ -61,23 +63,23 @@ const Dashboard = () => {
     </div>
   );
 
-  // Fakultetlar bo'yicha equipment statistikasi
+  // Факультеты по оборудованию - используем my-equipments API
   const facultyEquipmentStats = React.useMemo(() => {
-    if (!faculties.length || !equipment.length || !rooms.length) return [];
+    if (!faculties.length || !myEquipment.length || !rooms.length) return [];
 
     return faculties.map((faculty) => {
-      // Bu fakultetga tegishli binolar va xonalarni topish
+      // Найти комнаты, принадлежащие этому факультету
       const facultyRooms = rooms.filter((room) => {
-        // Fakultet binosiga tegishli xonalar
         return room.building === faculty.building;
       });
 
-      // Bu xonalardagi barcha equipmentlarni topish
-      const facultyEquipment = equipment.filter((item) =>
-        facultyRooms.some((room) => room.id === item.room)
-      );
+      // Найти все оборудование в этих комнатах
+      const facultyEquipment = myEquipment.filter((item) => {
+        if (!item.room_data) return false;
+        return facultyRooms.some((room) => room.id === item.room_data.id);
+      });
 
-      // Status bo'yicha statistika
+      // Статистика по статусам
       const newCount = facultyEquipment.filter(
         (item) => item.status === "NEW"
       ).length;
@@ -85,7 +87,7 @@ const Dashboard = () => {
         (item) => item.status === "WORKING"
       ).length;
       const repairCount = facultyEquipment.filter(
-        (item) => item.status === "REPAIR"
+        (item) => item.status === "NEEDS_REPAIR"
       ).length;
       const disposedCount = facultyEquipment.filter(
         (item) => item.status === "DISPOSED"
@@ -96,27 +98,27 @@ const Dashboard = () => {
           faculty.name.length > 20
             ? faculty.name.substring(0, 20) + "..."
             : faculty.name,
-        jami: facultyEquipment.length,
-        yangi: newCount,
-        ishlaydi: workingCount,
-        tamirlash: repairCount,
-        eski: disposedCount,
+        всего: facultyEquipment.length,
+        новое: newCount,
+        работает: workingCount,
+        ремонт: repairCount,
+        утилизация: disposedCount,
       };
     });
-  }, [faculties, equipment, rooms]);
+  }, [faculties, myEquipment, rooms]);
 
-  // Barcha equipment statuslari uchun pie chart
+  // Статусы оборудования для pie chart
   const equipmentStatusData = React.useMemo(() => {
-    if (!equipment || equipment.length === 0) return [];
+    if (!myEquipment || myEquipment.length === 0) return [];
 
     const statuses = {
-      NEW: { count: 0, name: "Yangi", color: "#10b981" },
-      WORKING: { count: 0, name: "Ishlaydi", color: "#3b82f6" },
-      REPAIR: { count: 0, name: "Ta'mirlash", color: "#f59e0b" },
-      DISPOSED: { count: 0, name: "Eski", color: "#ef4444" },
+      NEW: { count: 0, name: "Новое", color: "#10b981" },
+      WORKING: { count: 0, name: "Работает", color: "#3b82f6" },
+      REPAIR: { count: 0, name: "Требуется ремонт", color: "#f59e0b" },
+      DISPOSED: { count: 0, name: "Утилизация", color: "#ef4444" },
     };
 
-    equipment.forEach((item) => {
+    myEquipment.forEach((item) => {
       if (statuses[item.status]) {
         statuses[item.status].count++;
       }
@@ -128,21 +130,63 @@ const Dashboard = () => {
         name: data.name,
         value: data.count,
         fill: data.color,
-        percentage: ((data.count / equipment.length) * 100).toFixed(1),
+        percentage: ((data.count / myEquipment.length) * 100).toFixed(1),
       }));
-  }, [equipment]);
+  }, [myEquipment]);
 
-  // Hisoblangan statistikalar
-  const workingCount = equipment.filter(
+  // Статистика по типам оборудования
+  const equipmentTypeStats = React.useMemo(() => {
+    if (!myEquipment || myEquipment.length === 0) return [];
+
+    const typeCount = {};
+    myEquipment.forEach((item) => {
+      const typeName = item.type_data?.name || "Неизвестно";
+      typeCount[typeName] = (typeCount[typeName] || 0) + 1;
+    });
+
+    return Object.entries(typeCount)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8); // Показываем топ 8 типов
+  }, [myEquipment]);
+
+  // Подсчет по статусам
+  const workingCount = myEquipment.filter(
     (item) => item.status === "WORKING"
   ).length;
-  const repairCount = equipment.filter(
-    (item) => item.status === "REPAIR"
+  const repairCount = myEquipment.filter(
+    (item) => item.status === "NEEDS_REPAIR"
   ).length;
-  const newCount = equipment.filter((item) => item.status === "NEW").length;
-  const disposedCount = equipment.filter(
+  const newCount = myEquipment.filter((item) => item.status === "NEW").length;
+  const disposedCount = myEquipment.filter(
     (item) => item.status === "DISPOSED"
   ).length;
+
+  // Статистика по активности оборудования
+  const activeEquipmentCount = myEquipment.filter(
+    (item) => item.is_active
+  ).length;
+  const inactiveEquipmentCount = totalEquipment - activeEquipmentCount;
+
+  // Статистика по локациям (комнатам)
+  const roomStats = React.useMemo(() => {
+    if (!myEquipment || myEquipment.length === 0) return [];
+
+    const roomCount = {};
+    myEquipment.forEach((item) => {
+      if (item.room_data) {
+        const roomName = `${item.room_data.number} - ${item.room_data.name}`;
+        roomCount[roomName] = (roomCount[roomName] || 0) + 1;
+      } else {
+        roomCount["Без локации"] = (roomCount["Без локации"] || 0) + 1;
+      }
+    });
+
+    return Object.entries(roomCount)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10); // Показываем топ 10 комнат
+  }, [myEquipment]);
 
   if (equipmentLoading) {
     return (
@@ -157,50 +201,52 @@ const Dashboard = () => {
       {/* Заголовок */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Boshqaruv paneli</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Панель управления
+          </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Inventar boshqaruv tizimi umumiy ko'rinishi
+            Обзор моего оборудования и статистика
           </p>
         </div>
         <div className="flex items-center space-x-2 text-sm text-gray-500">
           <ClockIcon className="h-4 w-4" />
-          <span>Yangilangan: {new Date().toLocaleString("uz")}</span>
+          <span>Обновлено: {new Date().toLocaleString("ru")}</span>
         </div>
       </div>
 
-      {/* Asosiy statistikalar */}
+      {/* Основная статистика */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Barcha jihozlar"
+          title="Моё оборудование"
           value={totalEquipment}
           icon={ComputerDesktopIcon}
           gradient="bg-gradient-to-br from-blue-600 to-blue-700"
-          description="Tizimdagi birliklar"
+          description="единиц в системе"
         />
         <StatCard
-          title="Binolar"
+          title="Здания"
           value={buildings.length}
           icon={BuildingOfficeIcon}
           gradient="bg-gradient-to-br from-purple-600 to-purple-700"
-          description="Universitet korpuslari"
+          description="корпусов университета"
         />
         <StatCard
-          title="Xonalar"
+          title="Кабинеты"
           value={rooms.length}
           icon={AcademicCapIcon}
           gradient="bg-gradient-to-br from-green-600 to-green-700"
-          description="Faol xonalar"
+          description="активных кабинетов"
         />
         <StatCard
-          title="Fakultetlar"
+          title="Факультеты"
           value={faculties.length}
           icon={UsersIcon}
           gradient="bg-gradient-to-br from-orange-600 to-orange-700"
-          description="O'quv bo'limlari"
+          description="учебных подразделений"
         />
       </div>
 
-      {/* Status ko'rsatkichlari */}
+      {/* Статусные индикаторы */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-gray-200 bg-white p-6">
           <div className="flex items-center">
@@ -208,7 +254,9 @@ const Dashboard = () => {
               <WrenchScrewdriverIcon className="h-6 w-6 text-orange-600" />
             </div>
             <div className="ml-4 flex-1">
-              <p className="text-sm font-medium text-gray-500">Ta'mirlashda</p>
+              <p className="text-sm font-medium text-gray-500">
+                Требуется ремонт
+              </p>
               <p className="text-2xl font-semibold text-gray-900">
                 {repairCount}
               </p>
@@ -248,7 +296,7 @@ const Dashboard = () => {
               <CheckCircleIcon className="h-6 w-6 text-green-600" />
             </div>
             <div className="ml-4 flex-1">
-              <p className="text-sm font-medium text-gray-500">Ishlaydi</p>
+              <p className="text-sm font-medium text-gray-500">Работает</p>
               <p className="text-2xl font-semibold text-gray-900">
                 {workingCount}
               </p>
@@ -288,7 +336,7 @@ const Dashboard = () => {
               <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
             </div>
             <div className="ml-4 flex-1">
-              <p className="text-sm font-medium text-gray-500">Eskirgan</p>
+              <p className="text-sm font-medium text-gray-500">Утилизация</p>
               <p className="text-2xl font-semibold text-gray-900">
                 {disposedCount}
               </p>
@@ -328,7 +376,7 @@ const Dashboard = () => {
               <CheckCircleIcon className="h-6 w-6 text-blue-600" />
             </div>
             <div className="ml-4 flex-1">
-              <p className="text-sm font-medium text-gray-500">Yangi</p>
+              <p className="text-sm font-medium text-gray-500">Новое</p>
               <p className="text-2xl font-semibold text-gray-900">{newCount}</p>
             </div>
           </div>
@@ -361,16 +409,110 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Asosiy diagrammalar */}
+      {/* Основные диаграммы */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Fakultetlar bo'yicha statistika */}
+        {/* Состояние всего оборудования - donut chart */}
         <div className="rounded-xl border border-gray-200 bg-white p-6">
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-900">
-              Fakultetlar bo'yicha jihozlar
+              Состояние оборудования
             </h3>
             <p className="text-sm text-gray-500">
-              Har bir fakultetdagi jihozlar soni va holati
+              Общее состояние моего оборудования
+            </p>
+          </div>
+          <div className="flex flex-col items-center">
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={equipmentStatusData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={120}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {equipmentStatusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value, name) => [`${value} шт.`, name]}
+                  contentStyle={{
+                    borderRadius: "12px",
+                    border: "1px solid #e2e8f0",
+                    boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+
+            {/* Легенда */}
+            <div className="grid grid-cols-2 gap-4 mt-4 w-full">
+              {equipmentStatusData.map((entry, index) => (
+                <div key={index} className="flex items-center">
+                  <div
+                    className="w-4 h-4 rounded-full mr-2"
+                    style={{ backgroundColor: entry.fill }}
+                  />
+                  <span className="text-sm text-gray-600">
+                    {entry.name}: {entry.value} ({entry.percentage}%)
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Типы оборудования */}
+        <div className="rounded-xl border border-gray-200 bg-white p-6">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Типы оборудования
+            </h3>
+            <p className="text-sm text-gray-500">
+              Распределение по типам оборудования
+            </p>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart
+              data={equipmentTypeStats}
+              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis
+                dataKey="name"
+                stroke="#64748b"
+                fontSize={12}
+                angle={-45}
+                textAnchor="end"
+                height={80}
+              />
+              <YAxis stroke="#64748b" fontSize={12} />
+              <Tooltip
+                contentStyle={{
+                  borderRadius: "12px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
+                }}
+              />
+              <Bar dataKey="count" fill="#3b82f6" name="Количество" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Дополнительная статистика */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Статистика по факультетам */}
+        <div className="rounded-xl border border-gray-200 bg-white p-6">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Оборудование по факультетам
+            </h3>
+            <p className="text-sm text-gray-500">
+              Количество и состояние оборудования в каждом факультете
             </p>
           </div>
           <ResponsiveContainer width="100%" height={400}>
@@ -395,118 +537,64 @@ const Dashboard = () => {
                   boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
                 }}
               />
-              <Bar dataKey="yangi" stackId="a" fill="#10b981" name="Yangi" />
+              <Bar dataKey="новое" stackId="a" fill="#10b981" name="Новое" />
               <Bar
-                dataKey="ishlaydi"
+                dataKey="работает"
                 stackId="a"
                 fill="#3b82f6"
-                name="Ishlaydi"
+                name="Работает"
               />
               <Bar
-                dataKey="tamirlash"
+                dataKey="ремонт"
                 stackId="a"
                 fill="#f59e0b"
-                name="Ta'mirlash"
+                name="Требуется ремонт"
               />
-              <Bar dataKey="eski" stackId="a" fill="#ef4444" name="Eski" />
+              <Bar
+                dataKey="утилизация"
+                stackId="a"
+                fill="#ef4444"
+                name="Утилизация"
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Barcha jihozlar holati - donut chart */}
+        {/* Распределение по кабинетам */}
         <div className="rounded-xl border border-gray-200 bg-white p-6">
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-900">
-              Jihozlar holati
+              Топ кабинетов по оборудованию
             </h3>
             <p className="text-sm text-gray-500">
-              Barcha jihozlarning umumiy holati
+              Кабинеты с наибольшим количеством оборудования
             </p>
           </div>
-          <div className="flex flex-col items-center">
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={equipmentStatusData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={120}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {equipmentStatusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value, name) => [`${value} ta`, name]}
-                  contentStyle={{
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                    boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-
-            {/* Legend */}
-            <div className="grid grid-cols-2 gap-4 mt-4 w-full">
-              {equipmentStatusData.map((entry, index) => (
-                <div key={index} className="flex items-center">
-                  <div
-                    className="w-4 h-4 rounded-full mr-2"
-                    style={{ backgroundColor: entry.fill }}
-                  />
-                  <span className="text-sm text-gray-600">
-                    {entry.name}: {entry.value} ({entry.percentage}%)
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Qo'shimcha ma'lumotlar */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <div className="rounded-lg bg-green-50 p-6 border border-green-200">
-          <div className="flex items-center">
-            <CheckCircleIcon className="h-10 w-10 text-green-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-green-800">
-                Yangi jihozlar
-              </p>
-              <p className="text-3xl font-bold text-green-900">{newCount}</p>
-              <p className="text-xs text-green-600">birlik qo'shildi</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-lg bg-orange-50 p-6 border border-orange-200">
-          <div className="flex items-center">
-            <WrenchScrewdriverIcon className="h-10 w-10 text-orange-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-orange-800">
-                Ta'mirlashda
-              </p>
-              <p className="text-3xl font-bold text-orange-900">
-                {repairCount}
-              </p>
-              <p className="text-xs text-orange-600">birlik jarayonda</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-lg bg-red-50 p-6 border border-red-200">
-          <div className="flex items-center">
-            <ExclamationTriangleIcon className="h-10 w-10 text-red-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-red-800">Eskirgan</p>
-              <p className="text-3xl font-bold text-red-900">{disposedCount}</p>
-              <p className="text-xs text-red-600">birlik hisobdan chiqarildi</p>
-            </div>
-          </div>
+          <ResponsiveContainer width="100%" height={400}>
+            <BarChart
+              data={roomStats}
+              margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis
+                dataKey="name"
+                stroke="#64748b"
+                fontSize={11}
+                angle={-45}
+                textAnchor="end"
+                height={100}
+              />
+              <YAxis stroke="#64748b" fontSize={12} />
+              <Tooltip
+                contentStyle={{
+                  borderRadius: "12px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
+                }}
+              />
+              <Bar dataKey="count" fill="#8b5cf6" name="Количество" />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>

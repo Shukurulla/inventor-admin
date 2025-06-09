@@ -88,7 +88,7 @@ const Faculties = () => {
         await createFaculty(facultyForm).unwrap();
         setSnackbar({
           open: true,
-          message: "Fakultet muvaffaqiyatli yaratildi!",
+          message: "Факультет успешно создан!",
           severity: "success",
         });
       } else {
@@ -98,7 +98,7 @@ const Faculties = () => {
         }).unwrap();
         setSnackbar({
           open: true,
-          message: "Fakultet muvaffaqiyatli yangilandi!",
+          message: "Факультет успешно обновлен!",
           severity: "success",
         });
       }
@@ -107,7 +107,7 @@ const Faculties = () => {
     } catch (error) {
       setSnackbar({
         open: true,
-        message: "Saqlashda xatolik yuz berdi",
+        message: "Ошибка при сохранении",
         severity: "error",
       });
     }
@@ -116,20 +116,20 @@ const Faculties = () => {
   const handleFacultyDelete = async (faculty) => {
     const building = buildings.find((b) => b.id === faculty.building);
     showConfirmation(
-      "Fakultetni o'chirish",
-      `"${faculty.name}" fakultetini (${building?.name}) o'chirishni tasdiqlaysizmi? Bu amal bekor qilib bo'lmaydi.`,
+      "Удаление факультета",
+      `Подтвердить удаление факультета "${faculty.name}" (${building?.name})? Это действие нельзя отменить.`,
       async () => {
         try {
           await deleteFaculty(faculty.id).unwrap();
           setSnackbar({
             open: true,
-            message: "Fakultet o'chirildi!",
+            message: "Факультет удален!",
             severity: "info",
           });
         } catch (error) {
           setSnackbar({
             open: true,
-            message: "O'chirishda xatolik yuz berdi",
+            message: "Ошибка при удалении",
             severity: "error",
           });
         }
@@ -147,7 +147,7 @@ const Faculties = () => {
   };
 
   if (isLoading) {
-    return <Typography>Yuklanmoqda...</Typography>;
+    return <Typography>Загрузка...</Typography>;
   }
 
   return (
@@ -161,7 +161,7 @@ const Faculties = () => {
         }}
       >
         <Typography variant="h4" fontWeight="bold">
-          Fakultetlarni boshqarish
+          Управление факультетами
         </Typography>
         <Button
           variant="contained"
@@ -170,7 +170,7 @@ const Faculties = () => {
           size="large"
           sx={{ borderRadius: 2 }}
         >
-          Fakultet qo'shish
+          Добавить факультет
         </Button>
       </Box>
 
@@ -179,10 +179,10 @@ const Faculties = () => {
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: "#f8fafc" }}>
-                <TableCell sx={{ fontWeight: 600 }}>Nomi</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Bino</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Название</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Здание</TableCell>
                 <TableCell align="center" sx={{ fontWeight: 600 }}>
-                  Amallar
+                  Действия
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -191,7 +191,7 @@ const Faculties = () => {
                 <TableRow>
                   <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
                     <Typography color="textSecondary">
-                      Hech qanday fakultet topilmadi
+                      Факультеты не найдены
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -207,7 +207,7 @@ const Faculties = () => {
                     </TableCell>
                     <TableCell>
                       {buildings.find((b) => b.id === faculty.building)?.name ||
-                        "Ko'rsatilmagan"}
+                        "Не указано"}
                     </TableCell>
                     <TableCell align="center">
                       <IconButton
@@ -242,29 +242,29 @@ const Faculties = () => {
       >
         <DialogTitle sx={{ fontWeight: 600 }}>
           {facultyModal.mode === "create"
-            ? "Fakultet yaratish"
-            : "Fakultetni tahrirlash"}
+            ? "Создать факультет"
+            : "Редактировать факультет"}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 2 }}>
             <TextField
-              label="Fakultet nomi"
+              label="Название факультета"
               value={facultyForm.name}
               onChange={(e) =>
                 setFacultyForm({ ...facultyForm, name: e.target.value })
               }
               fullWidth
               required
-              placeholder="Fakultet nomini kiriting"
+              placeholder="Введите название факультета"
             />
             <FormControl fullWidth required>
-              <InputLabel>Bino</InputLabel>
+              <InputLabel>Здание</InputLabel>
               <Select
                 value={facultyForm.building}
                 onChange={(e) =>
                   setFacultyForm({ ...facultyForm, building: e.target.value })
                 }
-                label="Bino"
+                label="Здание"
               >
                 {buildings.map((building) => (
                   <MenuItem key={building.id} value={building.id}>
@@ -279,14 +279,14 @@ const Faculties = () => {
           <Button
             onClick={() => setFacultyModal({ ...facultyModal, open: false })}
           >
-            Bekor qilish
+            Отменить
           </Button>
           <Button
             onClick={handleFacultySubmit}
             variant="contained"
             sx={{ borderRadius: 2 }}
           >
-            {facultyModal.mode === "create" ? "Yaratish" : "Saqlash"}
+            {facultyModal.mode === "create" ? "Создать" : "Сохранить"}
           </Button>
         </DialogActions>
       </Dialog>

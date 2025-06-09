@@ -25,6 +25,7 @@ import {
   MenuItem,
   Snackbar,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -35,7 +36,7 @@ import { usersApi } from "../api/usersApi";
 import ConfirmationModal from "../components/ConfirmationModal";
 
 const Users = () => {
-  const { data: users = [], isLoading } = usersApi.useGetUsersQuery();
+  const { data: users = [], isLoading, error } = usersApi.useGetUsersQuery();
   const [createUser] = usersApi.useCreateUserMutation();
   const [updateUser] = usersApi.useUpdateUserMutation();
   const [deleteUser] = usersApi.useDeleteUserMutation();
@@ -93,13 +94,13 @@ const Users = () => {
         await createUser(userForm).unwrap();
         setSnackbar({
           open: true,
-          message: "Foydalanuvchi muvaffaqiyatli yaratildi!",
+          message: "Пользователь успешно создан!",
           severity: "success",
         });
       } else {
         const updateData = { ...userForm };
         if (!updateData.password) {
-          delete updateData.password; // Don't send empty password
+          delete updateData.password; // Не отправлять пустой пароль
         }
         await updateUser({
           id: userModal.data.id,
@@ -107,7 +108,7 @@ const Users = () => {
         }).unwrap();
         setSnackbar({
           open: true,
-          message: "Foydalanuvchi muvaffaqiyatli yangilandi!",
+          message: "Пользователь успешно обновлен!",
           severity: "success",
         });
       }
@@ -122,9 +123,10 @@ const Users = () => {
         role: "user",
       });
     } catch (error) {
+      console.error("Error saving user:", error);
       setSnackbar({
         open: true,
-        message: "Saqlashda xatolik yuz berdi",
+        message: "Ошибка при сохранении",
         severity: "error",
       });
     }
@@ -132,20 +134,21 @@ const Users = () => {
 
   const handleUserDelete = async (user) => {
     showConfirmation(
-      "Foydalanuvchini o'chirish",
-      `"${user.first_name} ${user.last_name}" foydalanuvchisini o'chirishni tasdiqlaysizmi? Bu amal bekor qilib bo'lmaydi.`,
+      "Удаление пользователя",
+      `Подтвердить удаление пользователя "${user.first_name} ${user.last_name}"? Это действие нельзя отменить.`,
       async () => {
         try {
           await deleteUser(user.id).unwrap();
           setSnackbar({
             open: true,
-            message: "Foydalanuvchi o'chirildi!",
+            message: "Пользователь удален!",
             severity: "info",
           });
         } catch (error) {
+          console.error("Error deleting user:", error);
           setSnackbar({
             open: true,
-            message: "O'chirishda xatolik yuz berdi",
+            message: "Ошибка при удалении",
             severity: "error",
           });
         }
@@ -181,11 +184,11 @@ const Users = () => {
   const getRoleText = (role) => {
     switch (role) {
       case "admin":
-        return "Administrator";
+        return "Администратор";
       case "manager":
-        return "Menejer";
+        return "Менеджер";
       default:
-        return "Foydalanuvchi";
+        return "Пользователь";
     }
   };
 
@@ -201,7 +204,33 @@ const Users = () => {
   };
 
   if (isLoading) {
-    return <Typography>Yuklanmoqda...</Typography>;
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="200px"
+      >
+        <CircularProgress />
+        <Typography variant="h6" sx={{ ml: 2 }}>
+          Загрузка пользователей...
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Ошибка загрузки пользователей:{" "}
+          {error?.data?.message || error?.message || "Неизвестная ошибка"}
+        </Alert>
+        <Typography variant="body1">
+          Проверьте подключение к серверу и попробуйте обновить страницу.
+        </Typography>
+      </Box>
+    );
   }
 
   return (
@@ -214,9 +243,14 @@ const Users = () => {
           mb: 4,
         }}
       >
-        <Typography variant="h4" fontWeight="bold">
-          Foydalanuvchilarni boshqarish
-        </Typography>
+        <Box>
+          <Typography variant="h4" fontWeight="bold">
+            Управление пользователями
+          </Typography>
+          <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+            Создание и управление учетными записями пользователей
+          </Typography>
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -224,7 +258,7 @@ const Users = () => {
           size="large"
           sx={{ borderRadius: 2 }}
         >
-          Foydalanuvchi qo'shish
+          Добавить пользователя
         </Button>
       </Box>
 
@@ -233,64 +267,89 @@ const Users = () => {
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: "#f8fafc" }}>
-                <TableCell sx={{ fontWeight: 600 }}>Foydalanuvchi</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Пользователь</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Telefon</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Rol</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Телефон</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Роль</TableCell>
                 <TableCell align="center" sx={{ fontWeight: 600 }}>
-                  Amallar
+                  Действия
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {users.map((user) => (
-                <TableRow
-                  key={user.id}
-                  hover
-                  sx={{ "&:hover": { backgroundColor: "#f8fafc" } }}
-                >
-                  <TableCell>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                      <Avatar sx={{ bgcolor: "primary.main" }}>
-                        {user.first_name?.charAt(0) || user.username?.charAt(0)}
-                      </Avatar>
-                      <Box>
-                        <Typography variant="body1" fontWeight="medium">
-                          {user.first_name} {user.last_name}
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary">
-                          @{user.username}
-                        </Typography>
-                      </Box>
+              {users.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
+                    <Box>
+                      <Typography
+                        variant="h6"
+                        color="textSecondary"
+                        gutterBottom
+                      >
+                        Пользователи не найдены
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        Создайте первого пользователя, нажав кнопку "Добавить
+                        пользователя"
+                      </Typography>
                     </Box>
                   </TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.phone_number || "Ko'rsatilmagan"}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={getRoleText(user.role)}
-                      color={getRoleColor(user.role)}
-                      size="small"
-                      sx={{ borderRadius: 2 }}
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <IconButton
-                      onClick={() => openUserModal("edit", user)}
-                      color="primary"
-                      sx={{ mr: 1 }}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => handleUserDelete(user)}
-                      color="error"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                users.map((user) => (
+                  <TableRow
+                    key={user.id}
+                    hover
+                    sx={{ "&:hover": { backgroundColor: "#f8fafc" } }}
+                  >
+                    <TableCell>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 2 }}
+                      >
+                        <Avatar sx={{ bgcolor: "primary.main" }}>
+                          {user.first_name?.charAt(0) ||
+                            user.username?.charAt(0)}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body1" fontWeight="medium">
+                            {user.first_name} {user.last_name}
+                          </Typography>
+                          <Typography variant="body2" color="textSecondary">
+                            @{user.username}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.phone_number || "Не указан"}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={getRoleText(user.role)}
+                        color={getRoleColor(user.role)}
+                        size="small"
+                        sx={{ borderRadius: 2 }}
+                      />
+                    </TableCell>
+                    <TableCell align="center">
+                      <IconButton
+                        onClick={() => openUserModal("edit", user)}
+                        color="primary"
+                        sx={{ mr: 1 }}
+                        title="Редактировать"
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => handleUserDelete(user)}
+                        color="error"
+                        title="Удалить"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -306,37 +365,40 @@ const Users = () => {
       >
         <DialogTitle sx={{ fontWeight: 600 }}>
           {userModal.mode === "create"
-            ? "Foydalanuvchi yaratish"
-            : "Foydalanuvchini tahrirlash"}
+            ? "Создать пользователя"
+            : "Редактировать пользователя"}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 2 }}>
             <TextField
-              label="Foydalanuvchi nomi"
+              label="Имя пользователя"
               value={userForm.username}
               onChange={(e) =>
                 setUserForm({ ...userForm, username: e.target.value })
               }
               fullWidth
               required
+              placeholder="Введите имя пользователя"
             />
             <TextField
-              label="Ism"
+              label="Имя"
               value={userForm.first_name}
               onChange={(e) =>
                 setUserForm({ ...userForm, first_name: e.target.value })
               }
               fullWidth
               required
+              placeholder="Введите имя"
             />
             <TextField
-              label="Familiya"
+              label="Фамилия"
               value={userForm.last_name}
               onChange={(e) =>
                 setUserForm({ ...userForm, last_name: e.target.value })
               }
               fullWidth
               required
+              placeholder="Введите фамилию"
             />
             <TextField
               label="Email"
@@ -347,9 +409,10 @@ const Users = () => {
               }
               fullWidth
               required
+              placeholder="example@domain.com"
             />
             <TextField
-              label="Telefon"
+              label="Телефон"
               value={userForm.phone_number}
               onChange={(e) =>
                 setUserForm({ ...userForm, phone_number: e.target.value })
@@ -358,7 +421,7 @@ const Users = () => {
               placeholder="+998901234567"
             />
             <TextField
-              label="Parol"
+              label="Пароль"
               type="password"
               value={userForm.password}
               onChange={(e) =>
@@ -368,36 +431,37 @@ const Users = () => {
               required={userModal.mode === "create"}
               helperText={
                 userModal.mode === "edit"
-                  ? "Bo'sh qoldiring, agar o'zgartirmoqchi bo'lmasangiz"
+                  ? "Оставьте пустым, если не хотите изменять пароль"
                   : ""
               }
+              placeholder="Введите пароль"
             />
             <FormControl fullWidth required>
-              <InputLabel>Rol</InputLabel>
+              <InputLabel>Роль</InputLabel>
               <Select
                 value={userForm.role}
                 onChange={(e) =>
                   setUserForm({ ...userForm, role: e.target.value })
                 }
-                label="Rol"
+                label="Роль"
               >
-                <MenuItem value="user">Foydalanuvchi</MenuItem>
-                <MenuItem value="manager">Menejer</MenuItem>
-                <MenuItem value="admin">Administrator</MenuItem>
+                <MenuItem value="user">Пользователь</MenuItem>
+                <MenuItem value="manager">Менеджер</MenuItem>
+                <MenuItem value="admin">Администратор</MenuItem>
               </Select>
             </FormControl>
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
           <Button onClick={() => setUserModal({ ...userModal, open: false })}>
-            Bekor qilish
+            Отменить
           </Button>
           <Button
             onClick={handleUserSubmit}
             variant="contained"
             sx={{ borderRadius: 2 }}
           >
-            {userModal.mode === "create" ? "Yaratish" : "Saqlash"}
+            {userModal.mode === "create" ? "Создать" : "Сохранить"}
           </Button>
         </DialogActions>
       </Dialog>

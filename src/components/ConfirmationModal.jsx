@@ -10,7 +10,7 @@ const ConfirmationModal = ({
   message,
   type = "danger",
   confirmText,
-  cancelText = "Bekor qilish",
+  cancelText = "Отменить",
 }) => {
   if (!isOpen) return null;
 
@@ -19,25 +19,25 @@ const ConfirmationModal = ({
       iconBg: "bg-red-100",
       iconColor: "text-red-600",
       buttonBg: "bg-red-600 hover:bg-red-700 focus:ring-red-500",
-      defaultConfirmText: "O'chirish",
+      defaultConfirmText: "Удалить",
     },
     warning: {
       iconBg: "bg-yellow-100",
       iconColor: "text-yellow-600",
       buttonBg: "bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500",
-      defaultConfirmText: "Ha, davom etish",
+      defaultConfirmText: "Да, продолжить",
     },
     info: {
       iconBg: "bg-blue-100",
       iconColor: "text-blue-600",
       buttonBg: "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500",
-      defaultConfirmText: "Tasdiqlash",
+      defaultConfirmText: "Подтвердить",
     },
     success: {
       iconBg: "bg-green-100",
       iconColor: "text-green-600",
       buttonBg: "bg-green-600 hover:bg-green-700 focus:ring-green-500",
-      defaultConfirmText: "Tasdiqlash",
+      defaultConfirmText: "Подтвердить",
     },
   };
 

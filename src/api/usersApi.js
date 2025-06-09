@@ -4,12 +4,12 @@ import { api } from "../store/store";
 export const usersApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getUsers: builder.query({
-      query: () => "user/user/",
+      query: () => "user/users/",
       providesTags: ["User"],
     }),
     createUser: builder.mutation({
       query: (data) => ({
-        url: "user/user/",
+        url: "user/users/",
         method: "POST",
         body: data,
       }),
@@ -17,7 +17,7 @@ export const usersApi = api.injectEndpoints({
     }),
     updateUser: builder.mutation({
       query: ({ id, ...data }) => ({
-        url: `user/user/${id}/`,
+        url: `user/users/${id}/`,
         method: "PUT",
         body: data,
       }),
@@ -25,7 +25,7 @@ export const usersApi = api.injectEndpoints({
     }),
     deleteUser: builder.mutation({
       query: (id) => ({
-        url: `user/user/${id}/`,
+        url: `user/users/${id}/`,
         method: "DELETE",
       }),
       invalidatesTags: ["User"],

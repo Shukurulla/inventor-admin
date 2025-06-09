@@ -9,7 +9,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { dashboardApi } from "../api/dashboardApi";
 
-// Confirmation Modal komponenti
+// Confirmation Modal компонент
 const ConfirmationModal = ({
   isOpen,
   onClose,
@@ -25,13 +25,13 @@ const ConfirmationModal = ({
       iconBg: "bg-red-100",
       iconColor: "text-red-600",
       buttonBg: "bg-red-600 hover:bg-red-700 focus:ring-red-500",
-      buttonText: "O'chirish",
+      buttonText: "Удалить",
     },
     warning: {
       iconBg: "bg-yellow-100",
       iconColor: "text-yellow-600",
       buttonBg: "bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500",
-      buttonText: "Ha, davom etish",
+      buttonText: "Да, продолжить",
     },
   };
 
@@ -76,7 +76,7 @@ const ConfirmationModal = ({
               onClick={onClose}
               className="inline-flex justify-center rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
             >
-              Bekor qilish
+              Отменить
             </button>
           </div>
         </div>
@@ -148,31 +148,31 @@ const Buildings = () => {
     try {
       if (buildingModal.mode === "create") {
         await createBuilding(buildingForm).unwrap();
-        showNotification("Bino muvaffaqiyatli yaratildi!");
+        showNotification("Здание успешно создано!");
       } else {
         await updateBuilding({
           id: buildingModal.data.id,
           ...buildingForm,
         }).unwrap();
-        showNotification("Bino muvaffaqiyatli yangilandi!");
+        showNotification("Здание успешно обновлено!");
       }
       setBuildingModal({ open: false, mode: "create", data: null });
       setBuildingForm({ name: "", address: "", university: 1 });
     } catch (error) {
-      showNotification("Saqlashda xatolik yuz berdi", "error");
+      showNotification("Ошибка при сохранении", "error");
     }
   };
 
   const handleBuildingDelete = async (building) => {
     showConfirmation(
-      "Binoni o'chirish",
-      `"${building.name}" binoni o'chirishni tasdiqlaysizmi? Bu amal bekor qilib bo'lmaydi.`,
+      "Удаление здания",
+      `Подтвердить удаление здания "${building.name}"? Это действие нельзя отменить.`,
       async () => {
         try {
           await deleteBuilding(building.id).unwrap();
-          showNotification("Bino o'chirildi!", "info");
+          showNotification("Здание удалено!", "info");
         } catch (error) {
-          showNotification("O'chirishda xatolik yuz berdi", "error");
+          showNotification("Ошибка при удалении", "error");
         }
       }
     );
@@ -205,10 +205,10 @@ const Buildings = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Binolarni boshqarish
+            Управление зданиями
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Universitet binolarini boshqaring
+            Управление зданиями университета
           </p>
         </div>
         <button
@@ -216,7 +216,7 @@ const Buildings = () => {
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
         >
           <PlusIcon className="h-4 w-4 mr-2" />
-          Bino qo'shish
+          Добавить здание
         </button>
       </div>
 
@@ -252,13 +252,13 @@ const Buildings = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Nomi
+                  Название
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Manzil
+                  Адрес
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amallar
+                  Действия
                 </th>
               </tr>
             </thead>
@@ -290,14 +290,14 @@ const Buildings = () => {
                       <button
                         onClick={() => openBuildingModal("edit", building)}
                         className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors"
-                        title="Tahrirlash"
+                        title="Редактировать"
                       >
                         <PencilIcon className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleBuildingDelete(building)}
                         className="text-red-600 hover:text-red-900 p-1 rounded transition-colors"
-                        title="O'chirish"
+                        title="Удалить"
                       >
                         <TrashIcon className="h-4 w-4" />
                       </button>
@@ -325,14 +325,14 @@ const Buildings = () => {
                 <div className="px-6 py-4 border-b border-gray-200">
                   <h3 className="text-lg font-semibold text-gray-900">
                     {buildingModal.mode === "create"
-                      ? "Bino yaratish"
-                      : "Binoni tahrirlash"}
+                      ? "Создать здание"
+                      : "Редактировать здание"}
                   </h3>
                 </div>
                 <div className="px-6 py-4 space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Bino nomi *
+                      Название здания *
                     </label>
                     <input
                       type="text"
@@ -345,12 +345,12 @@ const Buildings = () => {
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                      placeholder="Bino nomini kiriting"
+                      placeholder="Введите название здания"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Manzil *
+                      Адрес *
                     </label>
                     <input
                       type="text"
@@ -363,7 +363,7 @@ const Buildings = () => {
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                      placeholder="Bino manzilini kiriting"
+                      placeholder="Введите адрес здания"
                     />
                   </div>
                 </div>
@@ -375,13 +375,13 @@ const Buildings = () => {
                     }
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                   >
-                    Bekor qilish
+                    Отменить
                   </button>
                   <button
                     type="submit"
                     className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                   >
-                    {buildingModal.mode === "create" ? "Yaratish" : "Saqlash"}
+                    {buildingModal.mode === "create" ? "Создать" : "Сохранить"}
                   </button>
                 </div>
               </form>

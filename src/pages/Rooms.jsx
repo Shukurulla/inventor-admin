@@ -103,14 +103,14 @@ const Rooms = () => {
         await createRoom(submitData).unwrap();
         setSnackbar({
           open: true,
-          message: "Xona muvaffaqiyatli yaratildi!",
+          message: "Кабинет успешно создан!",
           severity: "success",
         });
       } else {
         await updateRoom({ id: roomModal.data.id, ...submitData }).unwrap();
         setSnackbar({
           open: true,
-          message: "Xona muvaffaqiyatli yangilandi!",
+          message: "Кабинет успешно обновлен!",
           severity: "success",
         });
       }
@@ -125,7 +125,7 @@ const Rooms = () => {
     } catch (error) {
       setSnackbar({
         open: true,
-        message: "Saqlashda xatolik yuz berdi",
+        message: "Ошибка при сохранении",
         severity: "error",
       });
     }
@@ -134,20 +134,20 @@ const Rooms = () => {
   const handleRoomDelete = async (room) => {
     const building = buildings.find((b) => b.id === room.building);
     showConfirmation(
-      "Xonani o'chirish",
-      `"${room.number} - ${room.name}" xonasini (${building?.name}) o'chirishni tasdiqlaysizmi? Bu amal bekor qilib bo'lmaydi.`,
+      "Удаление кабинета",
+      `Подтвердить удаление кабинета "${room.number} - ${room.name}" (${building?.name})? Это действие нельзя отменить.`,
       async () => {
         try {
           await deleteRoom(room.id).unwrap();
           setSnackbar({
             open: true,
-            message: "Xona o'chirildi!",
+            message: "Кабинет удален!",
             severity: "info",
           });
         } catch (error) {
           setSnackbar({
             open: true,
-            message: "O'chirishda xatolik yuz berdi",
+            message: "Ошибка при удалении",
             severity: "error",
           });
         }
@@ -176,19 +176,19 @@ const Rooms = () => {
     setRoomModal({ open: true, mode, data: room });
   };
 
-  // Tanlangan binoga mos qavatlarni filtrlash
+  // Фильтровать этажи для выбранного здания
   const getFloorsForBuilding = (buildingId) => {
     return allFloors.filter((floor) => floor.building === parseInt(buildingId));
   };
 
-  // Fakultet ma'lumotini olish
+  // Получить информацию о факультете
   const getFacultyInfo = (room) => {
     const faculty = faculties.find((f) => f.building === room.building);
-    return faculty?.name || "Fakultetga biriktirilmagan";
+    return faculty?.name || "Не привязан к факультету";
   };
 
   if (isLoading) {
-    return <Typography>Yuklanmoqda...</Typography>;
+    return <Typography>Загрузка...</Typography>;
   }
 
   return (
@@ -202,7 +202,7 @@ const Rooms = () => {
         }}
       >
         <Typography variant="h4" fontWeight="bold">
-          Xonalarni boshqarish
+          Управление кабинетами
         </Typography>
         <Button
           variant="contained"
@@ -211,7 +211,7 @@ const Rooms = () => {
           size="large"
           sx={{ borderRadius: 2 }}
         >
-          Xona qo'shish
+          Добавить кабинет
         </Button>
       </Box>
 
@@ -220,14 +220,14 @@ const Rooms = () => {
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: "#f8fafc" }}>
-                <TableCell sx={{ fontWeight: 600 }}>Raqam</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Nomi</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Fakultet</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Bino</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Qavat</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Turi</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Номер</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Название</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Факультет</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Здание</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Этаж</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Тип</TableCell>
                 <TableCell align="center" sx={{ fontWeight: 600 }}>
-                  Amallar
+                  Действия
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -236,7 +236,7 @@ const Rooms = () => {
                 <TableRow>
                   <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                     <Typography color="textSecondary">
-                      Hech qanday xona topilmadi
+                      Кабинеты не найдены
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -254,12 +254,12 @@ const Rooms = () => {
                     <TableCell>{getFacultyInfo(room)}</TableCell>
                     <TableCell>
                       {buildings.find((b) => b.id === room.building)?.name ||
-                        "Ko'rsatilmagan"}
+                        "Не указано"}
                     </TableCell>
-                    <TableCell>{room.floor}-qavat</TableCell>
+                    <TableCell>{room.floor}-этаж</TableCell>
                     <TableCell>
                       <Chip
-                        label={room.is_special ? "Maxsus" : "Oddiy"}
+                        label={room.is_special ? "Специальный" : "Обычный"}
                         color={room.is_special ? "primary" : "default"}
                         size="small"
                         sx={{ borderRadius: 2 }}
@@ -297,41 +297,43 @@ const Rooms = () => {
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
         <DialogTitle sx={{ fontWeight: 600 }}>
-          {roomModal.mode === "create" ? "Xona yaratish" : "Xonani tahrirlash"}
+          {roomModal.mode === "create"
+            ? "Создать кабинет"
+            : "Редактировать кабинет"}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 2 }}>
             <TextField
-              label="Xona raqami"
+              label="Номер кабинета"
               value={roomForm.number}
               onChange={(e) =>
                 setRoomForm({ ...roomForm, number: e.target.value })
               }
               fullWidth
               required
-              placeholder="Masalan: 101, A-205"
+              placeholder="Например: 101, A-205"
             />
             <TextField
-              label="Xona nomi"
+              label="Название кабинета"
               value={roomForm.name}
               onChange={(e) =>
                 setRoomForm({ ...roomForm, name: e.target.value })
               }
               fullWidth
-              placeholder="Masalan: Kompyuter sinfi, Auditoriya"
+              placeholder="Например: Компьютерный класс, Аудитория"
             />
             <FormControl fullWidth required>
-              <InputLabel>Bino</InputLabel>
+              <InputLabel>Здание</InputLabel>
               <Select
                 value={roomForm.building}
                 onChange={(e) => {
                   setRoomForm({
                     ...roomForm,
                     building: e.target.value,
-                    floor: "", // Reset floor when building changes
+                    floor: "", // Сбросить этаж при изменении здания
                   });
                 }}
-                label="Bino"
+                label="Здание"
               >
                 {buildings.map((building) => (
                   <MenuItem key={building.id} value={building.id}>
@@ -341,18 +343,18 @@ const Rooms = () => {
               </Select>
             </FormControl>
             <FormControl fullWidth required disabled={!roomForm.building}>
-              <InputLabel>Qavat</InputLabel>
+              <InputLabel>Этаж</InputLabel>
               <Select
                 value={roomForm.floor}
                 onChange={(e) =>
                   setRoomForm({ ...roomForm, floor: e.target.value })
                 }
-                label="Qavat"
+                label="Этаж"
               >
                 {roomForm.building &&
                   getFloorsForBuilding(roomForm.building).map((floor) => (
                     <MenuItem key={floor.id} value={floor.id}>
-                      {floor.number}-qavat
+                      {floor.number}-этаж
                       {floor.description && ` (${floor.description})`}
                     </MenuItem>
                   ))}
@@ -367,20 +369,20 @@ const Rooms = () => {
                   }
                 />
               }
-              label="Maxsus xona"
+              label="Специальный кабинет"
             />
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
           <Button onClick={() => setRoomModal({ ...roomModal, open: false })}>
-            Bekor qilish
+            Отменить
           </Button>
           <Button
             onClick={handleRoomSubmit}
             variant="contained"
             sx={{ borderRadius: 2 }}
           >
-            {roomModal.mode === "create" ? "Yaratish" : "Saqlash"}
+            {roomModal.mode === "create" ? "Создать" : "Сохранить"}
           </Button>
         </DialogActions>
       </Dialog>
