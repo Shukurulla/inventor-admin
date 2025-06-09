@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { authApi } from "../api/authApi";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { Logo } from "../../public";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -32,12 +33,8 @@ const Login = () => {
       <div className="max-w-md w-full space-y-8">
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
           {/* Header */}
-          <div className="text-center">
-            <div className="mx-auto h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center mb-4">
-              <span className="text-white font-bold text-2xl">IM</span>
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900">InventMaster</h2>
-            <p className="mt-2 text-sm text-gray-600">Панель администратора</p>
+          <div className="flex items-center justify-center">
+            <img src={Logo} alt="" />
           </div>
 
           {/* Error Alert */}
