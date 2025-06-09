@@ -64,7 +64,7 @@ const Users = () => {
     email: "",
     phone_number: "",
     password: "",
-    role: "user",
+    role: "manager",
   });
 
   const showConfirmation = (title, message, onConfirm) => {
@@ -120,7 +120,7 @@ const Users = () => {
         email: "",
         phone_number: "",
         password: "",
-        role: "user",
+        role: "manager",
       });
     } catch (error) {
       console.error("Error saving user:", error);
@@ -175,7 +175,7 @@ const Users = () => {
         email: "",
         phone_number: "",
         password: "",
-        role: "user",
+        role: "manager",
       });
     }
     setUserModal({ open: true, mode, data: user });
@@ -185,10 +185,8 @@ const Users = () => {
     switch (role) {
       case "admin":
         return "Администратор";
-      case "manager":
-        return "Менеджер";
       default:
-        return "Пользователь";
+        return "Менеджер";
     }
   };
 
@@ -445,7 +443,6 @@ const Users = () => {
                 }
                 label="Роль"
               >
-                <MenuItem value="user">Пользователь</MenuItem>
                 <MenuItem value="manager">Менеджер</MenuItem>
                 <MenuItem value="admin">Администратор</MenuItem>
               </Select>
