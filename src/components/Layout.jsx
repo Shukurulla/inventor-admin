@@ -5,14 +5,11 @@ import { useDispatch } from "react-redux";
 import {
   ChartBarIcon,
   UsersIcon,
-  BuildingOfficeIcon,
-  AcademicCapIcon,
-  HomeIcon,
   Bars3Icon,
   XMarkIcon,
-  ChevronRightIcon,
   ArrowRightOnRectangleIcon,
   ExclamationTriangleIcon,
+  CubeIcon, // New icon for University Structure
 } from "@heroicons/react/24/outline";
 import { Logo } from "../../public";
 
@@ -115,10 +112,11 @@ const Layout = () => {
   const menuItems = [
     { path: "/dashboard", text: "Панель управления", icon: ChartBarIcon },
     { path: "/users", text: "Пользователи", icon: UsersIcon },
-    { path: "/buildings", text: "Здания", icon: BuildingOfficeIcon },
-    { path: "/floors", text: "Этажи", icon: HomeIcon },
-    { path: "/faculties", text: "Факультеты", icon: AcademicCapIcon },
-    { path: "/rooms", text: "Кабинеты", icon: HomeIcon },
+    {
+      path: "/university-structure",
+      text: "Структура университета",
+      icon: CubeIcon,
+    }, // New menu item
   ];
 
   const showConfirmation = (title, message, onConfirm, type = "danger") => {
@@ -198,9 +196,9 @@ const Layout = () => {
                             aria-hidden="true"
                           />
                           {item.text}
-                          {isActive && (
+                          {/* {isActive && (
                             <ChevronRightIcon className="ml-auto h-5 w-5 text-blue-600" />
-                          )}
+                          )} */}
                         </button>
                       </li>
                     );
@@ -297,12 +295,7 @@ const Layout = () => {
           <div className="h-6 w-px bg-gray-200 lg:hidden" />
 
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-            <div className="relative flex flex-1 items-center">
-              <h1 className="text-lg font-semibold text-gray-900">
-                {menuItems.find((item) => item.path === location.pathname)
-                  ?.text || "Панель управления"}
-              </h1>
-            </div>
+            <div className="relative flex flex-1 items-center"></div>
             <div className="flex items-center gap-x-4 lg:gap-x-6">
               {/* Profile dropdown */}
               <div className="relative">

@@ -19,10 +19,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
-import Buildings from "./pages/Buildings";
-import Floors from "./pages/Floors";
-import Faculties from "./pages/Faculties";
-import Rooms from "./pages/Rooms";
+import UniversityStructure from "./pages/UniversityStructure"; // New page
 
 const App = () => {
   return (
@@ -42,10 +39,10 @@ const App = () => {
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="users" element={<Users />} />
-              <Route path="buildings" element={<Buildings />} />
-              <Route path="floors" element={<Floors />} />
-              <Route path="faculties" element={<Faculties />} />
-              <Route path="rooms" element={<Rooms />} />
+              <Route
+                path="university-structure"
+                element={<UniversityStructure />}
+              />
             </Route>
           </Routes>
         </Router>
