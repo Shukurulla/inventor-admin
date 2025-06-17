@@ -1,5 +1,6 @@
-// pages/Users.jsx
+// pages/Users.jsx - Updated actions section
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -31,12 +32,14 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  Visibility as VisibilityIcon, // New icon for view details
 } from "@mui/icons-material";
 import { usersApi } from "../api/usersApi";
 import ConfirmationModal from "../components/ConfirmationModal";
 
 const Users = () => {
   const { data: users = [], isLoading, error } = usersApi.useGetUsersQuery();
+  const navigate = useNavigate(); // Add navigation hook
   const [createUser] = usersApi.useCreateUserMutation();
   const [updateUser] = usersApi.useUpdateUserMutation();
   const [deleteUser] = usersApi.useDeleteUserMutation();
@@ -189,6 +192,9 @@ const Users = () => {
         return "Менеджер";
     }
   };
+  const handleViewUserDetails = (userId) => {
+    navigate(`/users/${userId}`);
+  };
 
   const getRoleColor = (role) => {
     switch (role) {
@@ -329,6 +335,14 @@ const Users = () => {
                       />
                     </TableCell>
                     <TableCell align="center">
+                      <IconButton
+                        onClick={() => handleViewUserDetails(user.id)}
+                        color="info"
+                        sx={{ mr: 1 }}
+                        title="Посмотреть детали"
+                      >
+                        <VisibilityIcon />
+                      </IconButton>
                       <IconButton
                         onClick={() => openUserModal("edit", user)}
                         color="primary"

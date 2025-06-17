@@ -111,12 +111,13 @@ const Layout = () => {
 
   const menuItems = [
     { path: "/dashboard", text: "Панель управления", icon: ChartBarIcon },
+    { path: "/statistics", text: "Статистика", icon: ChartBarIcon }, // New menu item
     { path: "/users", text: "Пользователи", icon: UsersIcon },
     {
       path: "/university-structure",
       text: "Структура университета",
       icon: CubeIcon,
-    }, // New menu item
+    },
   ];
 
   const showConfirmation = (title, message, onConfirm, type = "danger") => {

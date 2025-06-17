@@ -1,4 +1,4 @@
-// api/dashboardApi.js
+// api/dashboardApi.js - Updated with correct endpoints from Postman
 import { api } from "../store/store";
 
 export const dashboardApi = api.injectEndpoints({
@@ -129,7 +129,7 @@ export const dashboardApi = api.injectEndpoints({
       invalidatesTags: ["Room"],
     }),
 
-    // Equipment endpoints
+    // Equipment endpoints - Updated based on Postman collection
     getEquipment: builder.query({
       query: (params = {}) => {
         const queryParams = new URLSearchParams();
@@ -146,6 +146,18 @@ export const dashboardApi = api.injectEndpoints({
       providesTags: ["Equipment"],
     }),
 
+    // My equipment - Correct endpoint from Postman
+    getMyEquipment: builder.query({
+      query: () => "inventory/equipment/my-equipments/",
+      providesTags: ["Equipment"],
+    }),
+
+    // My actions - User's activity
+    getMyActions: builder.query({
+      query: () => "inventory/equipment/my-actions/",
+      providesTags: ["Equipment"],
+    }),
+
     // Equipment by room
     getEquipmentByRoom: builder.query({
       query: (roomId) => `inventory/equipment/equipment-by-room/${roomId}/`,
@@ -155,18 +167,6 @@ export const dashboardApi = api.injectEndpoints({
     // Equipment types
     getEquipmentTypes: builder.query({
       query: () => "inventory/equipment-types/",
-      providesTags: ["Equipment"],
-    }),
-
-    // My equipment
-    getMyEquipment: builder.query({
-      query: () => "inventory/equipment/my-equipments/",
-      providesTags: ["Equipment"],
-    }),
-
-    // My actions
-    getMyActions: builder.query({
-      query: () => "inventory/equipment/my-actions/",
       providesTags: ["Equipment"],
     }),
 
@@ -292,7 +292,7 @@ export const dashboardApi = api.injectEndpoints({
       invalidatesTags: ["Equipment"],
     }),
 
-    // Specifications
+    // Specifications - Updated endpoints
     getComputerSpecifications: builder.query({
       query: () => "inventory/computer-specifications/",
       providesTags: ["Equipment"],
@@ -300,7 +300,7 @@ export const dashboardApi = api.injectEndpoints({
 
     createComputerSpecification: builder.mutation({
       query: (data) => ({
-        url: "inventory/create-comp-spec/",
+        url: "inventory/computer-specification/",
         method: "POST",
         body: data,
       }),
@@ -321,55 +321,7 @@ export const dashboardApi = api.injectEndpoints({
       invalidatesTags: ["Equipment"],
     }),
 
-    // Bulk operations
-    bulkCreateEquipment: builder.mutation({
-      query: (data) => ({
-        url: "inventory/equipment/bulk-create/",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Equipment"],
-    }),
-
-    bulkUpdateInn: builder.mutation({
-      query: (data) => ({
-        url: "inventory/equipment/bulk-update-inn/",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Equipment"],
-    }),
-
-    // QR Scanner
-    scanQR: builder.mutation({
-      query: (data) => ({
-        url: "inventory/equipment/scan-qr/",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Equipment"],
-    }),
-
-    // Specification count
-    getSpecificationCount: builder.query({
-      query: () => "inventory/specifications/specification-count/",
-      providesTags: ["Equipment"],
-    }),
-
-    // Room operations
-    getRoomsByBuilding: builder.query({
-      query: (buildingId) =>
-        `inventory/equipment/rooms-by-building/${buildingId}`,
-      providesTags: ["Room", "Equipment"],
-    }),
-
-    getRoomsInBuilding: builder.query({
-      query: (buildingId) =>
-        `university/rooms_in_building/?building_id=${buildingId}`,
-      providesTags: ["Room"],
-    }),
-
-    // Additional specifications
+    // Additional specifications from Postman
     createPrinterSpecification: builder.mutation({
       query: (data) => ({
         url: "inventory/printer-specification/",
@@ -432,5 +384,155 @@ export const dashboardApi = api.injectEndpoints({
       }),
       invalidatesTags: ["Equipment"],
     }),
+
+    createMonitorSpecification: builder.mutation({
+      query: (data) => ({
+        url: "inventory/monitor-specification/",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Equipment"],
+    }),
+
+    // Bulk operations
+    bulkCreateEquipment: builder.mutation({
+      query: (data) => ({
+        url: "inventory/equipment/bulk-create/",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Equipment"],
+    }),
+
+    bulkUpdateInn: builder.mutation({
+      query: (data) => ({
+        url: "inventory/equipment/bulk-update-inn/",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Equipment"],
+    }),
+
+    // QR Scanner
+    scanQR: builder.mutation({
+      query: (data) => ({
+        url: "inventory/equipment/scan-qr/",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Equipment"],
+    }),
+
+    // Generate QR PDF
+    generateQRPDF: builder.mutation({
+      query: (data) => ({
+        url: "inventory/equipment/generate-qr-pdf/",
+        method: "POST",
+        body: data,
+      }),
+    }),
+
+    // Specification count
+    getSpecificationCount: builder.query({
+      query: () => "inventory/specifications/specification-count/",
+      providesTags: ["Equipment"],
+    }),
+
+    // Room operations
+    getRoomsByBuilding: builder.query({
+      query: (buildingId) =>
+        `inventory/equipment/rooms-by-building/${buildingId}`,
+      providesTags: ["Room", "Equipment"],
+    }),
+
+    getRoomsInBuilding: builder.query({
+      query: (buildingId) =>
+        `university/rooms_in_building/?building_id=${buildingId}`,
+      providesTags: ["Room"],
+    }),
+
+    // Equipment search and characteristics
+    getAllCharacteristics: builder.query({
+      query: () => "inventory/equipment-search/list_all_characteristics/",
+      providesTags: ["Equipment"],
+    }),
   }),
 });
+
+export const {
+  // University
+  useGetUniversityQuery,
+  useGetBuildingsQuery,
+  useCreateBuildingMutation,
+  useUpdateBuildingMutation,
+  useDeleteBuildingMutation,
+
+  // Floors
+  useGetFloorsQuery,
+  useGetAllFloorsQuery,
+  useCreateFloorMutation,
+  useUpdateFloorMutation,
+  useDeleteFloorMutation,
+
+  // Faculties
+  useGetFacultiesQuery,
+  useCreateFacultyMutation,
+  useUpdateFacultyMutation,
+  useDeleteFacultyMutation,
+
+  // Rooms
+  useGetRoomsQuery,
+  useCreateRoomMutation,
+  useUpdateRoomMutation,
+  useDeleteRoomMutation,
+  useGetRoomsByBuildingQuery,
+  useGetRoomsInBuildingQuery,
+
+  // Equipment
+  useGetEquipmentQuery,
+  useGetMyEquipmentQuery,
+  useGetMyActionsQuery,
+  useGetEquipmentByRoomQuery,
+  useGetEquipmentTypesQuery,
+  useCreateEquipmentMutation,
+  useUpdateEquipmentMutation,
+  useDeleteEquipmentMutation,
+  useMoveEquipmentMutation,
+  useSendToRepairMutation,
+  useDisposeEquipmentMutation,
+
+  // Repairs & Disposals
+  useGetRepairsQuery,
+  useGetRepairByIdQuery,
+  useCompleteRepairMutation,
+  useFailRepairMutation,
+  useGetDisposalsQuery,
+  useGetDisposalByIdQuery,
+
+  // History & Contracts
+  useGetMovementHistoryQuery,
+  useGetContractsQuery,
+  useCreateContractMutation,
+
+  // Specifications
+  useGetComputerSpecificationsQuery,
+  useCreateComputerSpecificationMutation,
+  useGetProjectorSpecificationsQuery,
+  useCreateProjectorSpecificationMutation,
+  useCreatePrinterSpecificationMutation,
+  useCreateExtenderSpecificationMutation,
+  useCreateTvSpecificationMutation,
+  useCreateRouterSpecificationMutation,
+  useCreateWhiteboardSpecificationMutation,
+  useCreateNotebookSpecificationMutation,
+  useCreateMonoblokSpecificationMutation,
+  useCreateMonitorSpecificationMutation,
+
+  // Bulk operations
+  useBulkCreateEquipmentMutation,
+  useBulkUpdateInnMutation,
+  useScanQRMutation,
+  useGenerateQRPDFMutation,
+  useGetSpecificationCountQuery,
+  useGetAllCharacteristicsQuery,
+} = dashboardApi;

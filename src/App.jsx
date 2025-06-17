@@ -1,5 +1,5 @@
 // App.jsx
-import React from "react";
+import React, { useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -9,7 +9,7 @@ import {
 import { Provider } from "react-redux";
 
 // Store
-import { store } from "./store/store";
+import { store, startTokenRefresh, stopTokenRefresh } from "./store/store";
 
 // Components
 import Layout from "./components/Layout";
@@ -19,9 +19,24 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
-import UniversityStructure from "./pages/UniversityStructure"; // New page
+import UserDetail from "./pages/UserDetail";
+import UniversityStructure from "./pages/UniversityStructure";
+import Statistics from "./pages/Statistics";
 
 const App = () => {
+  useEffect(() => {
+    // Start token refresh when app loads
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      startTokenRefresh();
+    }
+
+    // Cleanup on unmount
+    return () => {
+      stopTokenRefresh();
+    };
+  }, []);
+
   return (
     <Provider store={store}>
       <div className="font-inter">
@@ -39,6 +54,8 @@ const App = () => {
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="users" element={<Users />} />
+              <Route path="users/:userId" element={<UserDetail />} />
+              <Route path="statistics" element={<Statistics />} />
               <Route
                 path="university-structure"
                 element={<UniversityStructure />}
