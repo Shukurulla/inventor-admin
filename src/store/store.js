@@ -38,7 +38,7 @@ export const { setCredentials, updateToken, logout } = authSlice.actions;
 // Base query with auto token refresh
 const baseQueryWithReauth = async (args, api, extraOptions) => {
   const baseQuery = fetchBaseQuery({
-    baseUrl: "https://invenmaster.pythonanywhere.com/",
+    baseUrl: "https://server.kerek.uz/",
     prepareHeaders: (headers, { getState }) => {
       const token = getState().auth.accessToken;
       if (token) {
@@ -123,7 +123,7 @@ export const startTokenRefresh = () => {
     if (refreshToken) {
       try {
         const response = await fetch(
-          "https://invenmaster.pythonanywhere.com/user/login/refresh/",
+          "https://server.kerek.uz/user/login/refresh/",
           {
             method: "POST",
             headers: {
