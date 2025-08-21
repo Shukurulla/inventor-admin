@@ -126,11 +126,7 @@ const Layout = () => {
       text: "Статистика",
       icon: ChartBarIcon,
     },
-    {
-      path: "/added",
-      text: "Мое оборудование",
-      icon: ClipboardDocumentListIcon,
-    },
+
     {
       path: "/specifications",
       text: "Характеристики",
