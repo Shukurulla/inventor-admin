@@ -26,7 +26,6 @@ import {
   useGetBuildingsQuery,
   useGetRoomsQuery,
   useGetEquipmentTypesQuery,
-  useGetUsersQuery,
   useDeleteEquipmentMutation,
 } from "../api/dashboardApi";
 import { useGetUsersQuery } from "../api/usersApi";
