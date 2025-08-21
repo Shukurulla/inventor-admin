@@ -1,4 +1,4 @@
-// components/Layout.jsx - Updated with new menu items
+// components/Layout.jsx - Updated with Contracts menu item
 import React, { useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -13,6 +13,7 @@ import {
   CogIcon, // For Specifications
   ComputerDesktopIcon, // For Admin Equipment
   ClipboardDocumentListIcon, // For Added Equipment
+  DocumentTextIcon, // For Contracts
 } from "@heroicons/react/24/outline";
 import { Logo } from "../../public";
 
@@ -126,17 +127,25 @@ const Layout = () => {
       text: "Статистика",
       icon: ChartBarIcon,
     },
-
     {
       path: "/specifications",
       text: "Характеристики",
       icon: CogIcon,
     },
-    { path: "/users", text: "Пользователи", icon: UsersIcon },
+    {
+      path: "/users",
+      text: "Пользователи",
+      icon: UsersIcon,
+    },
     {
       path: "/admin-equipment",
       text: "Все оборудование",
       icon: ComputerDesktopIcon,
+    },
+    {
+      path: "/contracts",
+      text: "Договоры",
+      icon: DocumentTextIcon,
     },
     {
       path: "/university-structure",

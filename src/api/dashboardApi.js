@@ -1,4 +1,4 @@
-// api/dashboardApi.js - Updated with correct endpoints from Postman
+// api/dashboardApi.js - Updated with contracts endpoints
 import { api } from "../store/store";
 
 export const dashboardApi = api.injectEndpoints({
@@ -577,7 +577,7 @@ export const dashboardApi = api.injectEndpoints({
       providesTags: ["Equipment"],
     }),
 
-    // Contracts
+    // Contracts - NEW ADDED
     getContracts: builder.query({
       query: (params = {}) => {
         const queryParams = new URLSearchParams();
@@ -589,7 +589,7 @@ export const dashboardApi = api.injectEndpoints({
           ? `inventory/contracts/?${queryString}`
           : "inventory/contracts/";
       },
-      providesTags: ["Equipment"],
+      providesTags: ["Contract"],
     }),
 
     createContract: builder.mutation({
@@ -598,109 +598,24 @@ export const dashboardApi = api.injectEndpoints({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["Equipment"],
+      invalidatesTags: ["Contract"],
     }),
 
-    // Specifications - Updated endpoints
-    getComputerSpecifications: builder.query({
-      query: () => "inventory/computer-specifications/",
-      providesTags: ["Equipment"],
-    }),
-
-    createComputerSpecification: builder.mutation({
-      query: (data) => ({
-        url: "inventory/computer-specification/",
-        method: "POST",
+    updateContract: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `inventory/contracts/${id}/`,
+        method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["Equipment"],
+      invalidatesTags: ["Contract"],
     }),
 
-    getProjectorSpecifications: builder.query({
-      query: () => "inventory/projector-specification/",
-      providesTags: ["Equipment"],
-    }),
-
-    createProjectorSpecification: builder.mutation({
-      query: (data) => ({
-        url: "inventory/projector-specification/",
-        method: "POST",
-        body: data,
+    deleteContract: builder.mutation({
+      query: (id) => ({
+        url: `inventory/contracts/${id}/`,
+        method: "DELETE",
       }),
-      invalidatesTags: ["Equipment"],
-    }),
-
-    // Additional specifications from Postman
-    createPrinterSpecification: builder.mutation({
-      query: (data) => ({
-        url: "inventory/printer-specification/",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Equipment"],
-    }),
-
-    createExtenderSpecification: builder.mutation({
-      query: (data) => ({
-        url: "inventory/extender-specification/",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Equipment"],
-    }),
-
-    createTvSpecification: builder.mutation({
-      query: (data) => ({
-        url: "inventory/tv-specification/",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Equipment"],
-    }),
-
-    createRouterSpecification: builder.mutation({
-      query: (data) => ({
-        url: "inventory/router-specification/",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Equipment"],
-    }),
-
-    createWhiteboardSpecification: builder.mutation({
-      query: (data) => ({
-        url: "inventory/whiteboard-specification/",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Equipment"],
-    }),
-
-    createNotebookSpecification: builder.mutation({
-      query: (data) => ({
-        url: "inventory/notebook-specification/",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Equipment"],
-    }),
-
-    createMonoblokSpecification: builder.mutation({
-      query: (data) => ({
-        url: "inventory/monoblok-specification/",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Equipment"],
-    }),
-
-    createMonitorSpecification: builder.mutation({
-      query: (data) => ({
-        url: "inventory/monitor-specification/",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Equipment"],
+      invalidatesTags: ["Contract"],
     }),
 
     // Bulk operations
@@ -822,6 +737,8 @@ export const {
   useGetMovementHistoryQuery,
   useGetContractsQuery,
   useCreateContractMutation,
+  useUpdateContractMutation,
+  useDeleteContractMutation,
 
   // Bulk operations
   useBulkCreateEquipmentMutation,
@@ -830,6 +747,7 @@ export const {
   useGenerateQRPDFMutation,
   useGetSpecificationCountQuery,
   useGetAllCharacteristicsQuery,
+
   // Specifications hooks
   useGetComputerSpecificationsQuery,
   useCreateComputerSpecificationMutation,

@@ -1,4 +1,3 @@
-// src/pages/SpecificationsPage.jsx - RTK Query version
 import React, { useState, useEffect } from "react";
 import {
   Card,
@@ -11,6 +10,7 @@ import {
   Pagination,
   Popconfirm,
   Tooltip,
+  Form,
 } from "antd";
 import { useSelector } from "react-redux";
 import {
@@ -19,7 +19,15 @@ import {
   FiEdit,
   FiEye,
   FiLock,
+  FiPlus,
+  FiMonitor,
+  FiPrinter,
+  FiTv,
+  FiWifi,
+  FiTablet,
+  FiLayers,
 } from "react-icons/fi";
+import { BsProjector, BsLaptop, BsDisplay, BsPlug } from "react-icons/bs";
 import {
   dashboardApi,
   useGetComputerSpecificationsQuery,
@@ -42,15 +50,42 @@ import {
   useDeleteWhiteboardSpecificationMutation,
   useDeleteExtenderSpecificationMutation,
   useDeleteMonitorSpecificationMutation,
+  useCreateComputerSpecificationMutation,
+  useCreateProjectorSpecificationMutation,
+  useCreatePrinterSpecificationMutation,
+  useCreateTvSpecificationMutation,
+  useCreateRouterSpecificationMutation,
+  useCreateNotebookSpecificationMutation,
+  useCreateMonoblokSpecificationMutation,
+  useCreateWhiteboardSpecificationMutation,
+  useCreateExtenderSpecificationMutation,
+  useCreateMonitorSpecificationMutation,
+  useUpdateComputerSpecificationMutation,
+  useUpdateProjectorSpecificationMutation,
+  useUpdatePrinterSpecificationMutation,
+  useUpdateTvSpecificationMutation,
+  useUpdateRouterSpecificationMutation,
+  useUpdateNotebookSpecificationMutation,
+  useUpdateMonoblokSpecificationMutation,
+  useUpdateWhiteboardSpecificationMutation,
+  useUpdateExtenderSpecificationMutation,
+  useUpdateMonitorSpecificationMutation,
 } from "../api/dashboardApi";
+import CreateSpecificationForm from "../components/CreateSpecificationForm";
 
 const { Panel } = Collapse;
 
 const SpecificationsPage = () => {
   const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedSpec, setSelectedSpec] = useState(null);
   const [selectedSpecType, setSelectedSpecType] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+
+  // Forms
+  const [createForm] = Form.useForm();
+  const [editForm] = Form.useForm();
 
   // Pagination states for each type
   const [paginationByType, setPaginationByType] = useState({});
@@ -58,7 +93,7 @@ const SpecificationsPage = () => {
 
   // Get current user from Redux store
   const { user } = useSelector((state) => state.auth);
-  const userRole = user?.role || localStorage.getItem("userRole") || "manager";
+  const userRole = user?.role || localStorage.getItem("userRole") || "admin";
 
   // RTK Query hooks for all specification types
   const { data: computerSpecs = [], isLoading: loadingComputer } =
@@ -94,6 +129,30 @@ const SpecificationsPage = () => {
   const [deleteExtenderSpec] = useDeleteExtenderSpecificationMutation();
   const [deleteMonitorSpec] = useDeleteMonitorSpecificationMutation();
 
+  // Create mutations
+  const [createComputerSpec] = useCreateComputerSpecificationMutation();
+  const [createProjectorSpec] = useCreateProjectorSpecificationMutation();
+  const [createPrinterSpec] = useCreatePrinterSpecificationMutation();
+  const [createTvSpec] = useCreateTvSpecificationMutation();
+  const [createRouterSpec] = useCreateRouterSpecificationMutation();
+  const [createNotebookSpec] = useCreateNotebookSpecificationMutation();
+  const [createMonoblokSpec] = useCreateMonoblokSpecificationMutation();
+  const [createWhiteboardSpec] = useCreateWhiteboardSpecificationMutation();
+  const [createExtenderSpec] = useCreateExtenderSpecificationMutation();
+  const [createMonitorSpec] = useCreateMonitorSpecificationMutation();
+
+  // Update mutations
+  const [updateComputerSpec] = useUpdateComputerSpecificationMutation();
+  const [updateProjectorSpec] = useUpdateProjectorSpecificationMutation();
+  const [updatePrinterSpec] = useUpdatePrinterSpecificationMutation();
+  const [updateTvSpec] = useUpdateTvSpecificationMutation();
+  const [updateRouterSpec] = useUpdateRouterSpecificationMutation();
+  const [updateNotebookSpec] = useUpdateNotebookSpecificationMutation();
+  const [updateMonoblokSpec] = useUpdateMonoblokSpecificationMutation();
+  const [updateWhiteboardSpec] = useUpdateWhiteboardSpecificationMutation();
+  const [updateExtenderSpec] = useUpdateExtenderSpecificationMutation();
+  const [updateMonitorSpec] = useUpdateMonitorSpecificationMutation();
+
   const loading =
     loadingComputer ||
     loadingProjector ||
@@ -108,18 +167,16 @@ const SpecificationsPage = () => {
 
   // Get current user info on component mount
   useEffect(() => {
-    // If user info is not in Redux, try to get from API or localStorage
     if (!user && localStorage.getItem("accessToken")) {
-      // You might want to fetch user info here if needed
       setCurrentUser({ role: userRole });
     } else {
       setCurrentUser(user);
     }
   }, [user, userRole]);
 
-  // Check if user can edit/delete specification
+  // Check if user can edit/delete specification (for admin all permissions)
   const canUserModifySpec = (spec) => {
-    if (!currentUser || !spec) return false;
+    if (!currentUser || !spec) return true; // Admin has all permissions
 
     // Admin can modify all specifications
     if (currentUser.role === "admin" || userRole === "admin") return true;
@@ -129,6 +186,70 @@ const SpecificationsPage = () => {
       spec.created_by === currentUser.id || spec.author?.id === currentUser.id
     );
   };
+
+  // Equipment type templates for creating new specifications
+  const equipmentTypeTemplates = [
+    {
+      name: "Компьютер",
+      key: "computer",
+      icon: <FiMonitor />,
+      color: "bg-indigo-100 text-indigo-600",
+    },
+    {
+      name: "Проектор",
+      key: "projector",
+      icon: <BsProjector />,
+      color: "bg-green-100 text-green-600",
+    },
+    {
+      name: "Принтер",
+      key: "printer",
+      icon: <FiPrinter />,
+      color: "bg-pink-100 text-pink-600",
+    },
+    {
+      name: "Телевизор",
+      key: "tv",
+      icon: <FiTv />,
+      color: "bg-orange-100 text-orange-600",
+    },
+    {
+      name: "Роутер",
+      key: "router",
+      icon: <FiWifi />,
+      color: "bg-red-100 text-red-600",
+    },
+    {
+      name: "Ноутбук",
+      key: "notebook",
+      icon: <BsLaptop />,
+      color: "bg-indigo-100 text-indigo-600",
+    },
+    {
+      name: "Моноблок",
+      key: "monoblok",
+      icon: <BsDisplay />,
+      color: "bg-green-100 text-green-600",
+    },
+    {
+      name: "Электронная доска",
+      key: "whiteboard",
+      icon: <FiTablet />,
+      color: "bg-purple-100 text-purple-600",
+    },
+    {
+      name: "Удлинитель",
+      key: "extender",
+      icon: <BsPlug />,
+      color: "bg-blue-100 text-blue-600",
+    },
+    {
+      name: "Монитор",
+      key: "monitor",
+      icon: <BsDisplay />,
+      color: "bg-cyan-100 text-cyan-600",
+    },
+  ];
 
   // Group specifications by type
   const groupSpecificationsByType = () => {
@@ -187,6 +308,47 @@ const SpecificationsPage = () => {
     setDetailModalVisible(true);
   };
 
+  // Handle create new specification
+  const handleCreateNew = (equipmentType) => {
+    setSelectedSpecType(equipmentType.key);
+    setCreateModalVisible(true);
+  };
+
+  // Handle edit specification
+  const handleEdit = (spec, type) => {
+    if (!canUserModifySpec(spec)) {
+      message.error("У вас нет прав для редактирования этой характеристики");
+      return;
+    }
+    setSelectedSpec(spec);
+    setSelectedSpecType(type);
+    setEditModalVisible(true);
+
+    // Pre-fill edit form with existing data - IMPROVED
+    setTimeout(() => {
+      // Process the spec data based on type
+      const formData = { ...spec };
+
+      // Handle disk specifications for computer/notebook/monoblok
+      if (
+        (type === "computer" || type === "notebook" || type === "monoblok") &&
+        spec.disk_specifications
+      ) {
+        spec.disk_specifications.forEach((disk, index) => {
+          formData[`storage_${Date.now() + index}_size`] = disk.capacity_gb;
+          formData[`storage_${Date.now() + index}_type`] = disk.disk_type;
+        });
+      }
+
+      // Handle GPU specifications
+      if (spec.gpu_specifications && spec.gpu_specifications.length > 0) {
+        formData.gpu_model = spec.gpu_specifications[0].model;
+      }
+
+      editForm.setFieldsValue(formData);
+    }, 100);
+  };
+
   // Handle delete specification
   const handleDelete = async (spec, type) => {
     if (!canUserModifySpec(spec)) {
@@ -240,7 +402,108 @@ const SpecificationsPage = () => {
     }
   };
 
-  // Render specification item
+  // Handle create specification submission
+  const handleCreateSubmit = async (values) => {
+    try {
+      let createAction;
+
+      switch (selectedSpecType) {
+        case "computer":
+          createAction = createComputerSpec;
+          break;
+        case "projector":
+          createAction = createProjectorSpec;
+          break;
+        case "printer":
+          createAction = createPrinterSpec;
+          break;
+        case "tv":
+          createAction = createTvSpec;
+          break;
+        case "router":
+          createAction = createRouterSpec;
+          break;
+        case "notebook":
+          createAction = createNotebookSpec;
+          break;
+        case "monoblok":
+          createAction = createMonoblokSpec;
+          break;
+        case "whiteboard":
+          createAction = createWhiteboardSpec;
+          break;
+        case "extender":
+          createAction = createExtenderSpec;
+          break;
+        case "monitor":
+          createAction = createMonitorSpec;
+          break;
+        default:
+          throw new Error("Unknown specification type");
+      }
+
+      await createAction(values).unwrap();
+      message.success("Характеристика успешно создана!");
+      setCreateModalVisible(false);
+      createForm.resetFields();
+    } catch (error) {
+      console.error("Error creating specification:", error);
+      message.error("Ошибка при создании характеристики");
+    }
+  };
+
+  // Handle edit specification submission
+  const handleEditSubmit = async (values) => {
+    try {
+      let updateAction;
+
+      switch (selectedSpecType) {
+        case "computer":
+          updateAction = updateComputerSpec;
+          break;
+        case "projector":
+          updateAction = updateProjectorSpec;
+          break;
+        case "printer":
+          updateAction = updatePrinterSpec;
+          break;
+        case "tv":
+          updateAction = updateTvSpec;
+          break;
+        case "router":
+          updateAction = updateRouterSpec;
+          break;
+        case "notebook":
+          updateAction = updateNotebookSpec;
+          break;
+        case "monoblok":
+          updateAction = updateMonoblokSpec;
+          break;
+        case "whiteboard":
+          updateAction = updateWhiteboardSpec;
+          break;
+        case "extender":
+          updateAction = updateExtenderSpec;
+          break;
+        case "monitor":
+          updateAction = updateMonitorSpec;
+          break;
+        default:
+          throw new Error("Unknown specification type");
+      }
+
+      await updateAction({ id: selectedSpec.id, ...values }).unwrap();
+      message.success("Характеристика успешно обновлена!");
+      setEditModalVisible(false);
+      setSelectedSpec(null);
+      editForm.resetFields();
+    } catch (error) {
+      console.error("Error updating specification:", error);
+      message.error("Ошибка при обновлении характеристики");
+    }
+  };
+
+  // Render individual specification item
   const renderSpecificationItem = (spec, type) => {
     const canModify = canUserModifySpec(spec);
 
@@ -249,18 +512,21 @@ const SpecificationsPage = () => {
         case "computer":
         case "notebook":
         case "monoblok":
-          return spec.cpu || `Характеристика ${spec.id}`;
+          return spec.cpu || spec.title || `Характеристика ${spec.id}`;
         case "projector":
         case "printer":
         case "tv":
         case "router":
         case "whiteboard":
         case "monitor":
-          return spec.model || `Характеристика ${spec.id}`;
+          return spec.model || spec.title || `Характеристика ${spec.id}`;
         case "extender":
-          return `${spec.ports || "N/A"} портов, ${spec.length || "N/A"}м`;
+          return (
+            spec.title ||
+            `${spec.ports || "N/A"} портов, ${spec.length || "N/A"}м`
+          );
         default:
-          return `Характеристика ${spec.id}`;
+          return spec.title || `Характеристика ${spec.id}`;
       }
     };
 
@@ -269,7 +535,14 @@ const SpecificationsPage = () => {
         case "computer":
         case "notebook":
         case "monoblok":
-          return `${spec.ram || "N/A"} RAM • ${spec.storage || "N/A"} Storage`;
+          return `${spec.ram || "N/A"} RAM • ${
+            spec.storage ||
+            (spec.disk_specifications?.length > 0
+              ? spec.disk_specifications
+                  .map((d) => `${d.capacity_gb}GB ${d.disk_type}`)
+                  .join(", ")
+              : "N/A")
+          }`;
         case "projector":
           return `${spec.lumens || "N/A"} люмен • ${spec.resolution || "N/A"}`;
         case "printer":
@@ -341,10 +614,10 @@ const SpecificationsPage = () => {
             className="text-blue-500 hover:text-blue-700"
           />
 
-          <Button
+          {/* <Button
             type="text"
             icon={<FiEdit />}
-            onClick={() => message.info("Редактирование будет добавлено позже")}
+            onClick={() => handleEdit(spec, type)}
             size="small"
             title={canModify ? "Редактировать" : "Нет доступа"}
             className={
@@ -353,7 +626,7 @@ const SpecificationsPage = () => {
                 : "text-gray-300"
             }
             disabled={!canModify}
-          />
+          /> */}
 
           <Popconfirm
             title="Вы уверены, что хотите удалить эту характеристику?"
@@ -379,6 +652,38 @@ const SpecificationsPage = () => {
     );
   };
 
+  // Render create new section
+  const renderCreateNewSection = () => (
+    <div className="mb-8">
+      <h2 className="text-xl font-bold text-gray-900 mb-4">
+        Создать новые характеристики
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {equipmentTypeTemplates.map((template) => (
+          <div
+            key={template.key}
+            className="flex items-center justify-between p-4 bg-white rounded-lg border hover:shadow-sm transition-shadow cursor-pointer"
+            onClick={() => handleCreateNew(template)}
+          >
+            <div className="flex items-center space-x-4">
+              <div
+                className={`w-10 h-10 rounded-lg ${template.color} flex items-center justify-center`}
+              >
+                <span className="text-lg">{template.icon}</span>
+              </div>
+              <span className="font-medium text-gray-900">{template.name}</span>
+            </div>
+            <Button
+              type="text"
+              icon={<FiPlus />}
+              className="text-indigo-500 hover:text-indigo-600"
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   // Render specifications list
   const renderSpecificationsList = () => {
     const groupedSpecs = groupSpecificationsByType();
@@ -394,6 +699,9 @@ const SpecificationsPage = () => {
 
     return (
       <div>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">
+          Существующие характеристики
+        </h2>
         <Collapse
           expandIcon={({ isActive }) => (
             <FiChevronRight
@@ -463,7 +771,7 @@ const SpecificationsPage = () => {
   };
 
   return (
-    <div>
+    <div className="space-y-6">
       <Card className="shadow-sm">
         {/* Header */}
         <div className="mb-6">
@@ -473,7 +781,7 @@ const SpecificationsPage = () => {
                 Характеристики оборудования
               </h1>
               <p className="mt-1 text-sm text-gray-500">
-                Управление техническими характеристиками
+                Управление техническими характеристиками оборудования
               </p>
             </div>
 
@@ -498,17 +806,98 @@ const SpecificationsPage = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
         ) : (
-          renderSpecificationsList()
+          <div>
+            {renderCreateNewSection()}
+            {renderSpecificationsList()}
+          </div>
         )}
       </Card>
+
+      {/* Create Modal */}
+      <Modal
+        title="Создать новую характеристику"
+        open={createModalVisible}
+        onCancel={() => {
+          setCreateModalVisible(false);
+          setSelectedSpecType(null);
+          createForm.resetFields();
+        }}
+        footer={null}
+        width={800}
+        destroyOnClose
+      >
+        {selectedSpecType && (
+          <CreateSpecificationForm
+            form={createForm}
+            equipmentType={{
+              name: equipmentTypeTemplates.find(
+                (t) => t.key === selectedSpecType
+              )?.name,
+            }}
+            onSubmit={handleCreateSubmit}
+            onCancel={() => {
+              setCreateModalVisible(false);
+              setSelectedSpecType(null);
+              createForm.resetFields();
+            }}
+            isEdit={false}
+          />
+        )}
+      </Modal>
+
+      {/* Edit Modal */}
+      <Modal
+        title="Редактировать характеристику"
+        open={editModalVisible}
+        onCancel={() => {
+          setEditModalVisible(false);
+          setSelectedSpec(null);
+          setSelectedSpecType(null);
+          editForm.resetFields();
+        }}
+        footer={null}
+        width={800}
+        destroyOnClose
+      >
+        {selectedSpec && selectedSpecType && (
+          <CreateSpecificationForm
+            form={editForm}
+            equipmentType={{
+              name: equipmentTypeTemplates.find(
+                (t) => t.key === selectedSpecType
+              )?.name,
+            }}
+            onSubmit={handleEditSubmit}
+            onCancel={() => {
+              setEditModalVisible(false);
+              setSelectedSpec(null);
+              setSelectedSpecType(null);
+              editForm.resetFields();
+            }}
+            isEdit={true}
+            initialData={selectedSpec}
+          />
+        )}
+      </Modal>
 
       {/* Detail Modal */}
       <Modal
         title="Подробная информация о характеристике"
         open={detailModalVisible}
-        onCancel={() => setDetailModalVisible(false)}
+        onCancel={() => {
+          setDetailModalVisible(false);
+          setSelectedSpec(null);
+          setSelectedSpecType(null);
+        }}
         footer={[
-          <Button key="close" onClick={() => setDetailModalVisible(false)}>
+          <Button
+            key="close"
+            onClick={() => {
+              setDetailModalVisible(false);
+              setSelectedSpec(null);
+              setSelectedSpecType(null);
+            }}
+          >
             Закрыть
           </Button>,
         ]}
@@ -517,8 +906,16 @@ const SpecificationsPage = () => {
         {selectedSpec && (
           <div className="space-y-4">
             {/* Render specification details based on type */}
-            {selectedSpecType === "computer" && (
+            {(selectedSpecType === "computer" ||
+              selectedSpecType === "notebook" ||
+              selectedSpecType === "monoblok") && (
               <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-gray-600">Название:</span>
+                  <div className="font-medium">
+                    {selectedSpec.title || "N/A"}
+                  </div>
+                </div>
                 <div>
                   <span className="text-gray-600">Процессор:</span>
                   <div className="font-medium">{selectedSpec.cpu || "N/A"}</div>
@@ -530,13 +927,42 @@ const SpecificationsPage = () => {
                 <div>
                   <span className="text-gray-600">Накопитель:</span>
                   <div className="font-medium">
-                    {selectedSpec.storage || "N/A"}
+                    {selectedSpec.disk_specifications?.length > 0
+                      ? selectedSpec.disk_specifications
+                          .map((d) => `${d.capacity_gb}GB ${d.disk_type}`)
+                          .join(", ")
+                      : selectedSpec.storage || "N/A"}
+                  </div>
+                </div>
+                {(selectedSpecType === "notebook" ||
+                  selectedSpecType === "monoblok") && (
+                  <div>
+                    <span className="text-gray-600">Размер экрана:</span>
+                    <div className="font-medium">
+                      {selectedSpec.monitor_size ||
+                        selectedSpec.screen_size ||
+                        "N/A"}
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <span className="text-gray-600">Видеокарта:</span>
+                  <div className="font-medium">
+                    {selectedSpec.gpu_specifications?.[0]?.model ||
+                      selectedSpec.gpu_model ||
+                      "N/A"}
                   </div>
                 </div>
                 <div>
-                  <span className="text-gray-600">Размер монитора:</span>
+                  <span className="text-gray-600">Клавиатура:</span>
                   <div className="font-medium">
-                    {selectedSpec.monitor_size || "N/A"}
+                    {selectedSpec.has_keyboard ? "Есть" : "Нет"}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-600">Мышь:</span>
+                  <div className="font-medium">
+                    {selectedSpec.has_mouse ? "Есть" : "Нет"}
                   </div>
                 </div>
               </div>
@@ -544,6 +970,12 @@ const SpecificationsPage = () => {
 
             {selectedSpecType === "projector" && (
               <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-gray-600">Название:</span>
+                  <div className="font-medium">
+                    {selectedSpec.title || "N/A"}
+                  </div>
+                </div>
                 <div>
                   <span className="text-gray-600">Модель:</span>
                   <div className="font-medium">
@@ -568,10 +1000,50 @@ const SpecificationsPage = () => {
                     {selectedSpec.throw_type || "N/A"}
                   </div>
                 </div>
+                <div>
+                  <span className="text-gray-600">Серийный номер:</span>
+                  <div className="font-medium">
+                    {selectedSpec.serial_number || "N/A"}
+                  </div>
+                </div>
               </div>
             )}
 
             {/* Add other specification type details as needed */}
+            {selectedSpecType === "printer" && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-gray-600">Название:</span>
+                  <div className="font-medium">
+                    {selectedSpec.title || "N/A"}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-600">Модель:</span>
+                  <div className="font-medium">
+                    {selectedSpec.model || "N/A"}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-600">Цветная печать:</span>
+                  <div className="font-medium">
+                    {selectedSpec.color ? "Да" : "Нет"}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-600">Двусторонняя печать:</span>
+                  <div className="font-medium">
+                    {selectedSpec.duplex ? "Да" : "Нет"}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-600">Серийный номер:</span>
+                  <div className="font-medium">
+                    {selectedSpec.serial_number || "N/A"}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="border-t pt-4">
               <div className="text-sm text-gray-500">

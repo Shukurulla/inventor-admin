@@ -1,4 +1,4 @@
-// src/pages/AdminEquipmentPage.jsx - Complete RTK Query version without errors
+// src/pages/AdminEquipmentPage.jsx - Enhanced version with my-equipments API
 import React, { useState } from "react";
 import {
   Card,
@@ -11,6 +11,11 @@ import {
   Select,
   Pagination,
   Popconfirm,
+  Tooltip,
+  Form,
+  Input,
+  DatePicker,
+  Upload,
 } from "antd";
 import {
   FiChevronRight,
@@ -19,14 +24,26 @@ import {
   FiFilter,
   FiEye,
   FiMapPin,
+  FiUser,
+  FiUpload,
+  FiPlus,
+  FiMonitor,
+  FiPrinter,
+  FiTv,
+  FiWifi,
+  FiTablet,
+  FiLayers,
 } from "react-icons/fi";
+import { BsProjector, BsLaptop, BsDisplay, BsPlug } from "react-icons/bs";
 import {
   dashboardApi,
-  useGetEquipmentQuery,
+  useGetMyEquipmentQuery,
   useGetBuildingsQuery,
   useGetRoomsQuery,
   useGetEquipmentTypesQuery,
   useDeleteEquipmentMutation,
+  useUpdateEquipmentMutation,
+  useCreateEquipmentMutation,
 } from "../api/dashboardApi";
 import { useGetUsersQuery } from "../api/usersApi";
 const { Panel } = Collapse;
@@ -88,35 +105,43 @@ const getStatusConfig = (status) => {
   }
 };
 
-// Equipment Icon Component
+// Equipment Icon Component with React Icons
 const EquipmentIcon = ({ type, className = "text-lg" }) => {
   const getIcon = () => {
-    if (!type) return "⚙️";
+    if (!type) return <FiLayers className={className} />;
 
     const typeLower = type.toLowerCase();
 
-    if (typeLower.includes("проектор")) return "📽️";
-    if (typeLower.includes("компьютер")) return "💻";
-    if (typeLower.includes("принтер")) return "🖨️";
-    if (typeLower.includes("монитор")) return "🖥️";
-    if (typeLower.includes("телевизор")) return "📺";
+    if (typeLower.includes("проектор"))
+      return <BsProjector className={className} />;
+    if (typeLower.includes("компьютер"))
+      return <FiMonitor className={className} />;
+    if (typeLower.includes("принтер"))
+      return <FiPrinter className={className} />;
+    if (typeLower.includes("монитор"))
+      return <BsDisplay className={className} />;
+    if (typeLower.includes("телевизор")) return <FiTv className={className} />;
     if (typeLower.includes("роутер") || typeLower.includes("router"))
-      return "📡";
-    if (typeLower.includes("ноутбук")) return "💻";
-    if (typeLower.includes("моноблок")) return "🖥️";
+      return <FiWifi className={className} />;
+    if (typeLower.includes("ноутбук"))
+      return <BsLaptop className={className} />;
+    if (typeLower.includes("моноблок"))
+      return <BsDisplay className={className} />;
     if (typeLower.includes("доска") || typeLower.includes("электронная"))
-      return "📋";
+      return <FiTablet className={className} />;
     if (typeLower.includes("удлинитель") || typeLower.includes("extender"))
-      return "🔌";
+      return <BsPlug className={className} />;
 
-    return "⚙️";
+    return <FiLayers className={className} />;
   };
 
-  return <span className={className}>{getIcon()}</span>;
+  return getIcon();
 };
 
 const AdminEquipmentPage = () => {
   const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState(null);
   const [filters, setFilters] = useState({
     building_id: undefined,
@@ -126,19 +151,20 @@ const AdminEquipmentPage = () => {
     author_id: undefined,
   });
 
+  // Forms
+  const [editForm] = Form.useForm();
+  const [createForm] = Form.useForm();
+
   // Pagination states for each type
   const [paginationByType, setPaginationByType] = useState({});
   const [pageSize] = useState(5);
 
-  // RTK Query hooks with error handling
+  // RTK Query hooks - using my-equipments API instead of general equipment API
   const {
     data: equipmentResponse,
     isLoading: equipmentLoading,
     error: equipmentError,
-  } = useGetEquipmentQuery(filters, {
-    skip: false,
-    refetchOnMountOrArgChange: true,
-  });
+  } = useGetMyEquipmentQuery();
 
   const { data: buildings = [], isLoading: buildingsLoading } =
     useGetBuildingsQuery();
@@ -146,16 +172,21 @@ const AdminEquipmentPage = () => {
   const { data: equipmentTypes = [], isLoading: typesLoading } =
     useGetEquipmentTypesQuery();
   const { data: users = [], isLoading: usersLoading } = useGetUsersQuery();
+
   const [deleteEquipment, { isLoading: deleteLoading }] =
     useDeleteEquipmentMutation();
+  const [updateEquipment, { isLoading: updateLoading }] =
+    useUpdateEquipmentMutation();
+  const [createEquipment, { isLoading: createLoading }] =
+    useCreateEquipmentMutation();
 
-  // Safely extract equipment array from response
+  // Safely extract equipment array from my-equipments response
   const getAllEquipment = () => {
     if (!equipmentResponse) return [];
 
     let equipmentArray = [];
 
-    // Handle different response structures
+    // Handle different response structures from my-equipments API
     if (Array.isArray(equipmentResponse)) {
       equipmentArray = equipmentResponse;
     } else if (
@@ -168,17 +199,39 @@ const AdminEquipmentPage = () => {
       Array.isArray(equipmentResponse.data)
     ) {
       equipmentArray = equipmentResponse.data;
-    } else if (
-      typeof equipmentResponse === "object" &&
-      equipmentResponse.equipment
-    ) {
-      equipmentArray = Array.isArray(equipmentResponse.equipment)
-        ? equipmentResponse.equipment
-        : [];
+    }
+
+    // Apply filters
+    let filteredEquipment = [...equipmentArray];
+
+    if (filters.building_id) {
+      filteredEquipment = filteredEquipment.filter(
+        (item) => item.room_data?.building === filters.building_id
+      );
+    }
+    if (filters.room_id) {
+      filteredEquipment = filteredEquipment.filter(
+        (item) => item.room_data?.id === filters.room_id
+      );
+    }
+    if (filters.type_id) {
+      filteredEquipment = filteredEquipment.filter(
+        (item) => (item.type_data?.id || item.type) === filters.type_id
+      );
+    }
+    if (filters.status) {
+      filteredEquipment = filteredEquipment.filter(
+        (item) => item.status === filters.status
+      );
+    }
+    if (filters.author_id) {
+      filteredEquipment = filteredEquipment.filter(
+        (item) => item.author?.id === filters.author_id
+      );
     }
 
     // Filter valid equipment items
-    return equipmentArray.filter(
+    return filteredEquipment.filter(
       (item) =>
         item &&
         typeof item === "object" &&
@@ -249,9 +302,56 @@ const AdminEquipmentPage = () => {
 
   // Handle edit button click
   const handleEdit = (equipment) => {
-    message.info(
-      "Функция редактирования будет добавлена в следующих обновлениях"
-    );
+    setSelectedEquipment(equipment);
+    setEditModalVisible(true);
+
+    // Pre-fill form
+    setTimeout(() => {
+      editForm.setFieldsValue({
+        name: equipment.name,
+        description: equipment.description,
+        status: equipment.status,
+        type: equipment.type_data?.id || equipment.type,
+        room_id: equipment.room_data?.id,
+      });
+    }, 100);
+  };
+
+  // Handle create button click
+  const handleCreate = () => {
+    setCreateModalVisible(true);
+  };
+
+  // Handle edit submit
+  const handleEditSubmit = async (values) => {
+    try {
+      await updateEquipment({
+        id: selectedEquipment.id,
+        ...values,
+      }).unwrap();
+
+      message.success("Оборудование успешно обновлено!");
+      setEditModalVisible(false);
+      setSelectedEquipment(null);
+      editForm.resetFields();
+    } catch (error) {
+      console.error("Error updating equipment:", error);
+      message.error("Ошибка при обновлении оборудования");
+    }
+  };
+
+  // Handle create submit
+  const handleCreateSubmit = async (values) => {
+    try {
+      await createEquipment(values).unwrap();
+
+      message.success("Оборудование успешно создано!");
+      setCreateModalVisible(false);
+      createForm.resetFields();
+    } catch (error) {
+      console.error("Error creating equipment:", error);
+      message.error("Ошибка при создании оборудования");
+    }
   };
 
   // Handle delete confirmation
@@ -307,7 +407,7 @@ const AdminEquipmentPage = () => {
     return Array.isArray(users) ? users : [];
   };
 
-  // Render individual equipment item
+  // Render individual equipment item with enhanced info
   const renderEquipmentItem = (item) => {
     const statusConfig = getStatusConfig(item.status);
 
@@ -355,11 +455,35 @@ const AdminEquipmentPage = () => {
               <span>ИНН: {item.inn || "Не присвоен"}</span>
               <span>ID: {item.id}</span>
               {item.author && (
-                <span>
-                  Автор: {item.author.first_name} {item.author.last_name}
-                </span>
+                <div className="flex items-center space-x-1">
+                  <FiUser className="text-gray-400" />
+                  <span>
+                    {item.author.first_name} {item.author.last_name}
+                  </span>
+                </div>
               )}
             </div>
+
+            {/* Enhanced details from my-equipments API */}
+            {item.description && (
+              <div className="text-xs text-gray-400 mt-1 max-w-md truncate">
+                {item.description}
+              </div>
+            )}
+
+            {/* Contract information */}
+            {item.contract && (
+              <div className="text-xs text-blue-600 mt-1">
+                Договор: {item.contract.number}
+              </div>
+            )}
+
+            {/* Creation date */}
+            {item.created_at && (
+              <div className="text-xs text-gray-400 mt-1">
+                Создано: {new Date(item.created_at).toLocaleDateString("ru")}
+              </div>
+            )}
           </div>
         </div>
 
@@ -372,7 +496,7 @@ const AdminEquipmentPage = () => {
             title="Подробнее"
             className="text-blue-500 hover:text-blue-700"
           />
-
+          {/* 
           <Button
             type="text"
             icon={<FiEdit />}
@@ -380,7 +504,7 @@ const AdminEquipmentPage = () => {
             size="small"
             title="Редактировать"
             className="text-indigo-500 hover:text-indigo-700"
-          />
+          /> */}
 
           <Popconfirm
             title="Удалить оборудование?"
@@ -538,6 +662,14 @@ const AdminEquipmentPage = () => {
             </p>
           </div>
           <div className="flex items-center space-x-4">
+            <Button
+              type="primary"
+              icon={<FiPlus />}
+              onClick={handleCreate}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              Добавить оборудование
+            </Button>
             <div className="text-sm text-gray-500">
               Всего:{" "}
               <span className="font-medium">{getAllEquipment().length}</span>{" "}
@@ -546,7 +678,7 @@ const AdminEquipmentPage = () => {
           </div>
         </div>
 
-        {/* Filters */}
+        {/* Enhanced Filters */}
         <div className="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
           <Select
             placeholder="Корпус"
@@ -689,7 +821,166 @@ const AdminEquipmentPage = () => {
         )}
       </Card>
 
-      {/* Detail Modal */}
+      {/* Edit Equipment Modal */}
+      <Modal
+        title="Редактировать оборудование"
+        open={editModalVisible}
+        onCancel={() => {
+          setEditModalVisible(false);
+          setSelectedEquipment(null);
+          editForm.resetFields();
+        }}
+        footer={null}
+        width={600}
+        destroyOnClose
+      >
+        <Form form={editForm} layout="vertical" onFinish={handleEditSubmit}>
+          <Form.Item
+            label="Название"
+            name="name"
+            rules={[{ required: true, message: "Введите название!" }]}
+          >
+            <Input placeholder="Название оборудования" />
+          </Form.Item>
+
+          <Form.Item label="Описание" name="description">
+            <Input.TextArea rows={3} placeholder="Описание оборудования" />
+          </Form.Item>
+
+          <Form.Item
+            label="Состояние"
+            name="status"
+            rules={[{ required: true, message: "Выберите состояние!" }]}
+          >
+            <Select placeholder="Выберите состояние">
+              <Select.Option value="NEW">Новое</Select.Option>
+              <Select.Option value="WORKING">Работает</Select.Option>
+              <Select.Option value="NEEDS_REPAIR">
+                Требует ремонта
+              </Select.Option>
+              <Select.Option value="DISPOSED">Утилизировано</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item label="Комната" name="room_id">
+            <Select placeholder="Выберите комнату" allowClear>
+              {rooms.map((room) => (
+                <Select.Option key={room.id} value={room.id}>
+                  {room.number} - {room.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button
+              onClick={() => {
+                setEditModalVisible(false);
+                setSelectedEquipment(null);
+                editForm.resetFields();
+              }}
+            >
+              Отмена
+            </Button>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={updateLoading}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              Сохранить
+            </Button>
+          </div>
+        </Form>
+      </Modal>
+
+      {/* Create Equipment Modal */}
+      <Modal
+        title="Добавить оборудование"
+        open={createModalVisible}
+        onCancel={() => {
+          setCreateModalVisible(false);
+          createForm.resetFields();
+        }}
+        footer={null}
+        width={600}
+        destroyOnClose
+      >
+        <Form form={createForm} layout="vertical" onFinish={handleCreateSubmit}>
+          <Form.Item
+            label="Название"
+            name="name"
+            rules={[{ required: true, message: "Введите название!" }]}
+          >
+            <Input placeholder="Название оборудования" />
+          </Form.Item>
+
+          <Form.Item
+            label="Тип оборудования"
+            name="type"
+            rules={[{ required: true, message: "Выберите тип!" }]}
+          >
+            <Select placeholder="Выберите тип оборудования">
+              {equipmentTypes.map((type) => (
+                <Select.Option key={type.id} value={type.id}>
+                  <div className="flex items-center space-x-2">
+                    <EquipmentIcon type={type.name} />
+                    <span>{type.name}</span>
+                  </div>
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="Комната"
+            name="room_id"
+            rules={[{ required: true, message: "Выберите комнату!" }]}
+          >
+            <Select placeholder="Выберите комнату">
+              {rooms.map((room) => (
+                <Select.Option key={room.id} value={room.id}>
+                  {room.number} - {room.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item label="Описание" name="description">
+            <Input.TextArea rows={3} placeholder="Описание оборудования" />
+          </Form.Item>
+
+          <Form.Item label="Состояние" name="status" initialValue="NEW">
+            <Select>
+              <Select.Option value="NEW">Новое</Select.Option>
+              <Select.Option value="WORKING">Работает</Select.Option>
+              <Select.Option value="NEEDS_REPAIR">
+                Требует ремонта
+              </Select.Option>
+              <Select.Option value="DISPOSED">Утилизировано</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button
+              onClick={() => {
+                setCreateModalVisible(false);
+                createForm.resetFields();
+              }}
+            >
+              Отмена
+            </Button>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={createLoading}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              Создать
+            </Button>
+          </div>
+        </Form>
+      </Modal>
       <Modal
         title="Подробная информация об оборудовании"
         open={detailModalVisible}
@@ -776,6 +1067,34 @@ const AdminEquipmentPage = () => {
               </div>
             </div>
 
+            {/* Contract Info */}
+            {selectedEquipment.contract && (
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h4 className="font-medium mb-2 flex items-center">
+                  <span className="mr-2">📄</span>
+                  Информация о договоре
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-gray-500">Номер договора:</span>
+                    <span className="ml-2 font-medium">
+                      {selectedEquipment.contract.number}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Дата заключения:</span>
+                    <span className="ml-2 font-medium">
+                      {selectedEquipment.contract.signed_date
+                        ? new Date(
+                            selectedEquipment.contract.signed_date
+                          ).toLocaleDateString("ru")
+                        : "Неизвестно"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Author Info */}
             {selectedEquipment.author && (
               <div className="bg-purple-50 p-4 rounded-lg">
@@ -815,6 +1134,19 @@ const AdminEquipmentPage = () => {
                     </span>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Equipment Image */}
+            {selectedEquipment.image && (
+              <div className="bg-gray-50 p-4 rounded-lg text-center">
+                <h4 className="font-medium mb-3">Изображение оборудования</h4>
+                <img
+                  src={selectedEquipment.image}
+                  alt="Equipment"
+                  className="max-w-md mx-auto rounded-lg shadow-sm"
+                  style={{ maxHeight: "300px" }}
+                />
               </div>
             )}
 

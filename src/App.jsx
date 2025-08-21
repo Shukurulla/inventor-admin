@@ -25,6 +25,7 @@ import Statistics from "./pages/Statistics";
 // import AddedPage from "./pages/AddedPage";
 import SpecificationsPage from "./pages/SpecificationsPage";
 import AdminEquipmentPage from "./pages/AdminEquipmentPage";
+import ContractsPage from "./pages/ContractsPage";
 
 // Role-based route protection component
 const RoleProtectedRoute = ({ children, allowedRoles }) => {
@@ -75,6 +76,7 @@ const App = () => {
                 path="university-structure"
                 element={<UniversityStructure />}
               />
+              <Route path="contracts" element={<ContractsPage />} />
             </Route>
           </Routes>
         </Router>
