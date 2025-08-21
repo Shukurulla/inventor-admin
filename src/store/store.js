@@ -10,30 +10,44 @@ const authSlice = createSlice({
     accessToken: localStorage.getItem("accessToken"),
     refreshToken: localStorage.getItem("refreshToken"),
     isAuthenticated: !!localStorage.getItem("accessToken"),
+    user: null, // User ma'lumotlarini saqlash uchun
   },
   reducers: {
     setCredentials: (state, action) => {
       state.accessToken = action.payload.access;
       state.refreshToken = action.payload.refresh;
       state.isAuthenticated = true;
+      state.user = action.payload.user || null;
       localStorage.setItem("accessToken", action.payload.access);
       localStorage.setItem("refreshToken", action.payload.refresh);
+      if (action.payload.user?.role) {
+        localStorage.setItem("userRole", action.payload.user.role);
+      }
     },
     updateToken: (state, action) => {
       state.accessToken = action.payload.access;
       localStorage.setItem("accessToken", action.payload.access);
     },
+    setUser: (state, action) => {
+      state.user = action.payload;
+      if (action.payload?.role) {
+        localStorage.setItem("userRole", action.payload.role);
+      }
+    },
     logout: (state) => {
       state.accessToken = null;
       state.refreshToken = null;
       state.isAuthenticated = false;
+      state.user = null;
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
+      localStorage.removeItem("userRole");
     },
   },
 });
 
-export const { setCredentials, updateToken, logout } = authSlice.actions;
+export const { setCredentials, updateToken, setUser, logout } =
+  authSlice.actions;
 
 // Base query with auto token refresh
 const baseQueryWithReauth = async (args, api, extraOptions) => {
@@ -99,6 +113,9 @@ export const api = createApi({
     "Room",
     "Equipment",
     "Floor",
+    "Specification", // YANGI QO'SHILDI
+    "Contract",
+    "Repair",
   ],
   endpoints: () => ({}),
 });

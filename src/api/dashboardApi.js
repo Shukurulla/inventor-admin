@@ -4,6 +4,315 @@ import { api } from "../store/store";
 export const dashboardApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // University endpoints
+    getComputerSpecifications: builder.query({
+      query: () => "inventory/computer-specification/",
+      providesTags: ["Specification"],
+    }),
+    createComputerSpecification: builder.mutation({
+      query: (data) => ({
+        url: "inventory/computer-specification/",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+    updateComputerSpecification: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `inventory/computer-specification/${id}/`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+    deleteComputerSpecification: builder.mutation({
+      query: (id) => ({
+        url: `inventory/computer-specification/${id}/`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+
+    // Projector specifications
+    getProjectorSpecifications: builder.query({
+      query: () => "inventory/projector-specification/",
+      providesTags: ["Specification"],
+    }),
+    createProjectorSpecification: builder.mutation({
+      query: (data) => ({
+        url: "inventory/projector-specification/",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+    updateProjectorSpecification: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `inventory/projector-specification/${id}/`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+    deleteProjectorSpecification: builder.mutation({
+      query: (id) => ({
+        url: `inventory/projector-specification/${id}/`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+
+    // Printer specifications
+    getPrinterSpecifications: builder.query({
+      query: () => "inventory/printer-specification/",
+      providesTags: ["Specification"],
+    }),
+    createPrinterSpecification: builder.mutation({
+      query: (data) => ({
+        url: "inventory/printer-specification/",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+    updatePrinterSpecification: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `inventory/printer-specification/${id}/`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+    deletePrinterSpecification: builder.mutation({
+      query: (id) => ({
+        url: `inventory/printer-specification/${id}/`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+
+    // TV specifications
+    getTvSpecifications: builder.query({
+      query: () => "inventory/tv-specification/",
+      providesTags: ["Specification"],
+    }),
+    createTvSpecification: builder.mutation({
+      query: (data) => ({
+        url: "inventory/tv-specification/",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+    updateTvSpecification: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `inventory/tv-specification/${id}/`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+    deleteTvSpecification: builder.mutation({
+      query: (id) => ({
+        url: `inventory/tv-specification/${id}/`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+
+    // Router specifications
+    getRouterSpecifications: builder.query({
+      query: () => "inventory/router-specification/",
+      providesTags: ["Specification"],
+    }),
+    createRouterSpecification: builder.mutation({
+      query: (data) => ({
+        url: "inventory/router-specification/",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+    updateRouterSpecification: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `inventory/router-specification/${id}/`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+    deleteRouterSpecification: builder.mutation({
+      query: (id) => ({
+        url: `inventory/router-specification/${id}/`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+
+    // Notebook specifications
+    getNotebookSpecifications: builder.query({
+      query: () => "inventory/notebook-specification/",
+      providesTags: ["Specification"],
+    }),
+    createNotebookSpecification: builder.mutation({
+      query: (data) => ({
+        url: "inventory/notebook-specification/",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+    updateNotebookSpecification: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `inventory/notebook-specification/${id}/`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+    deleteNotebookSpecification: builder.mutation({
+      query: (id) => ({
+        url: `inventory/notebook-specification/${id}/`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+
+    // Monoblok specifications
+    getMonoblokSpecifications: builder.query({
+      query: () => "inventory/monoblok-specification/",
+      providesTags: ["Specification"],
+    }),
+    createMonoblokSpecification: builder.mutation({
+      query: (data) => ({
+        url: "inventory/monoblok-specification/",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+    updateMonoblokSpecification: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `inventory/monoblok-specification/${id}/`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+    deleteMonoblokSpecification: builder.mutation({
+      query: (id) => ({
+        url: `inventory/monoblok-specification/${id}/`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+
+    // Whiteboard specifications
+    getWhiteboardSpecifications: builder.query({
+      query: () => "inventory/whiteboard-specification/",
+      providesTags: ["Specification"],
+    }),
+    createWhiteboardSpecification: builder.mutation({
+      query: (data) => ({
+        url: "inventory/whiteboard-specification/",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+    updateWhiteboardSpecification: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `inventory/whiteboard-specification/${id}/`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+    deleteWhiteboardSpecification: builder.mutation({
+      query: (id) => ({
+        url: `inventory/whiteboard-specification/${id}/`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+
+    // Extender specifications
+    getExtenderSpecifications: builder.query({
+      query: () => "inventory/extender-specification/",
+      providesTags: ["Specification"],
+    }),
+    createExtenderSpecification: builder.mutation({
+      query: (data) => ({
+        url: "inventory/extender-specification/",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+    updateExtenderSpecification: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `inventory/extender-specification/${id}/`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+    deleteExtenderSpecification: builder.mutation({
+      query: (id) => ({
+        url: `inventory/extender-specification/${id}/`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+
+    // Monitor specifications
+    getMonitorSpecifications: builder.query({
+      query: () => "inventory/monitor-specification/",
+      providesTags: ["Specification"],
+    }),
+    createMonitorSpecification: builder.mutation({
+      query: (data) => ({
+        url: "inventory/monitor-specification/",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+    updateMonitorSpecification: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `inventory/monitor-specification/${id}/`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+    deleteMonitorSpecification: builder.mutation({
+      query: (id) => ({
+        url: `inventory/monitor-specification/${id}/`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Specification"],
+    }),
+
+    // All equipment for admin (YANGI QO'SHILDI)
+    getAllEquipment: builder.query({
+      query: (params = {}) => {
+        const queryParams = new URLSearchParams();
+        if (params.page) queryParams.append("page", params.page);
+        if (params.limit) queryParams.append("limit", params.limit);
+        if (params.building_id)
+          queryParams.append("building_id", params.building_id);
+        if (params.room_id) queryParams.append("room_id", params.room_id);
+        if (params.type_id) queryParams.append("type_id", params.type_id);
+        if (params.status) queryParams.append("status", params.status);
+        if (params.author_id) queryParams.append("author_id", params.author_id);
+
+        const queryString = queryParams.toString();
+        return queryString
+          ? `inventory/equipment/filter/?${queryString}`
+          : "inventory/equipment/";
+      },
+      providesTags: ["Equipment"],
+    }),
     getUniversity: builder.query({
       query: () => "university/",
       providesTags: ["University"],
@@ -514,20 +823,6 @@ export const {
   useGetContractsQuery,
   useCreateContractMutation,
 
-  // Specifications
-  useGetComputerSpecificationsQuery,
-  useCreateComputerSpecificationMutation,
-  useGetProjectorSpecificationsQuery,
-  useCreateProjectorSpecificationMutation,
-  useCreatePrinterSpecificationMutation,
-  useCreateExtenderSpecificationMutation,
-  useCreateTvSpecificationMutation,
-  useCreateRouterSpecificationMutation,
-  useCreateWhiteboardSpecificationMutation,
-  useCreateNotebookSpecificationMutation,
-  useCreateMonoblokSpecificationMutation,
-  useCreateMonitorSpecificationMutation,
-
   // Bulk operations
   useBulkCreateEquipmentMutation,
   useBulkUpdateInnMutation,
@@ -535,4 +830,57 @@ export const {
   useGenerateQRPDFMutation,
   useGetSpecificationCountQuery,
   useGetAllCharacteristicsQuery,
+  // Specifications hooks
+  useGetComputerSpecificationsQuery,
+  useCreateComputerSpecificationMutation,
+  useUpdateComputerSpecificationMutation,
+  useDeleteComputerSpecificationMutation,
+
+  useGetProjectorSpecificationsQuery,
+  useCreateProjectorSpecificationMutation,
+  useUpdateProjectorSpecificationMutation,
+  useDeleteProjectorSpecificationMutation,
+
+  useGetPrinterSpecificationsQuery,
+  useCreatePrinterSpecificationMutation,
+  useUpdatePrinterSpecificationMutation,
+  useDeletePrinterSpecificationMutation,
+
+  useGetTvSpecificationsQuery,
+  useCreateTvSpecificationMutation,
+  useUpdateTvSpecificationMutation,
+  useDeleteTvSpecificationMutation,
+
+  useGetRouterSpecificationsQuery,
+  useCreateRouterSpecificationMutation,
+  useUpdateRouterSpecificationMutation,
+  useDeleteRouterSpecificationMutation,
+
+  useGetNotebookSpecificationsQuery,
+  useCreateNotebookSpecificationMutation,
+  useUpdateNotebookSpecificationMutation,
+  useDeleteNotebookSpecificationMutation,
+
+  useGetMonoblokSpecificationsQuery,
+  useCreateMonoblokSpecificationMutation,
+  useUpdateMonoblokSpecificationMutation,
+  useDeleteMonoblokSpecificationMutation,
+
+  useGetWhiteboardSpecificationsQuery,
+  useCreateWhiteboardSpecificationMutation,
+  useUpdateWhiteboardSpecificationMutation,
+  useDeleteWhiteboardSpecificationMutation,
+
+  useGetExtenderSpecificationsQuery,
+  useCreateExtenderSpecificationMutation,
+  useUpdateExtenderSpecificationMutation,
+  useDeleteExtenderSpecificationMutation,
+
+  useGetMonitorSpecificationsQuery,
+  useCreateMonitorSpecificationMutation,
+  useUpdateMonitorSpecificationMutation,
+  useDeleteMonitorSpecificationMutation,
+
+  // Admin equipment
+  useGetAllEquipmentQuery,
 } = dashboardApi;

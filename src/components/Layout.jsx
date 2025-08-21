@@ -1,7 +1,7 @@
-// components/Layout.jsx
+// components/Layout.jsx - Updated with new menu items
 import React, { useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   ChartBarIcon,
   UsersIcon,
@@ -9,11 +9,14 @@ import {
   XMarkIcon,
   ArrowRightOnRectangleIcon,
   ExclamationTriangleIcon,
-  CubeIcon, // New icon for University Structure
+  CubeIcon,
+  CogIcon, // For Specifications
+  ComputerDesktopIcon, // For Admin Equipment
+  ClipboardDocumentListIcon, // For Added Equipment
 } from "@heroicons/react/24/outline";
 import { Logo } from "../../public";
 
-// Confirmation Modal компонент
+// Confirmation Modal component (same as before)
 const ConfirmationModal = ({
   isOpen,
   onClose,
@@ -109,16 +112,54 @@ const Layout = () => {
     type: "danger",
   });
 
+  // Get user role from Redux store (assuming it's stored there)
+  const { user } = useSelector((state) => state.auth || {});
+  const userRole = user?.role || localStorage.getItem("userRole") || "manager";
+
   const menuItems = [
-    { path: "/dashboard", text: "Панель управления", icon: ChartBarIcon },
-    { path: "/statistics", text: "Статистика", icon: ChartBarIcon }, // New menu item
-    { path: "/users", text: "Пользователи", icon: UsersIcon },
+    {
+      path: "/dashboard",
+      text: "Панель управления",
+      icon: ChartBarIcon,
+      roles: ["admin", "manager"],
+    },
+    {
+      path: "/statistics",
+      text: "Статистика",
+      icon: ChartBarIcon,
+      roles: ["admin", "manager"],
+    },
+    {
+      path: "/added",
+      text: "Мое оборудование",
+      icon: ClipboardDocumentListIcon,
+      roles: ["admin", "manager"],
+    },
+    {
+      path: "/specifications",
+      text: "Характеристики",
+      icon: CogIcon,
+      roles: ["admin", "manager"],
+    },
+    { path: "/users", text: "Пользователи", icon: UsersIcon, roles: ["admin"] },
+    {
+      path: "/admin-equipment",
+      text: "Все оборудование",
+      icon: ComputerDesktopIcon,
+      roles: ["admin"],
+    },
     {
       path: "/university-structure",
       text: "Структура университета",
       icon: CubeIcon,
+      roles: ["admin"],
     },
   ];
+
+  // Filter menu items based on user role
+  const filteredMenuItems = menuItems.filter((item) =>
+    item.roles.includes(userRole)
+  );
 
   const showConfirmation = (title, message, onConfirm, type = "danger") => {
     setConfirmModal({
@@ -155,9 +196,39 @@ const Layout = () => {
       "Вы действительно хотите выйти из системы?",
       () => {
         dispatch({ type: "auth/logout" });
+        localStorage.removeItem("userRole");
         navigate("/login");
       },
       "warning"
+    );
+  };
+
+  const renderMenuItem = (item) => {
+    const isActive = location.pathname === item.path;
+    return (
+      <li key={item.path}>
+        <button
+          onClick={() => navigate(item.path)}
+          className={`
+            group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold w-full transition-all duration-200
+            ${
+              isActive
+                ? "bg-gray-50 text-blue-600 border-r-2 border-blue-600"
+                : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+            }
+          `}
+        >
+          <item.icon
+            className={`h-6 w-6 shrink-0 ${
+              isActive
+                ? "text-blue-600"
+                : "text-gray-400 group-hover:text-blue-600"
+            }`}
+            aria-hidden="true"
+          />
+          {item.text}
+        </button>
+      </li>
     );
   };
 
@@ -173,38 +244,20 @@ const Layout = () => {
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
                 <ul role="list" className="-mx-2 space-y-1">
-                  {menuItems.map((item) => {
-                    const isActive = location.pathname === item.path;
-                    return (
-                      <li key={item.path}>
-                        <button
-                          onClick={() => navigate(item.path)}
-                          className={`
-                            group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold w-full transition-all duration-200
-                            ${
-                              isActive
-                                ? "bg-gray-50 text-blue-600 border-r-2 border-blue-600"
-                                : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
-                            }
-                          `}
-                        >
-                          <item.icon
-                            className={`h-6 w-6 shrink-0 ${
-                              isActive
-                                ? "text-blue-600"
-                                : "text-gray-400 group-hover:text-blue-600"
-                            }`}
-                            aria-hidden="true"
-                          />
-                          {item.text}
-                          {/* {isActive && (
-                            <ChevronRightIcon className="ml-auto h-5 w-5 text-blue-600" />
-                          )} */}
-                        </button>
-                      </li>
-                    );
-                  })}
+                  {filteredMenuItems.map(renderMenuItem)}
                 </ul>
+              </li>
+
+              {/* Role indicator */}
+              <li className="mt-auto">
+                <div className="flex items-center p-2 text-xs text-gray-500 border-t border-gray-200">
+                  <div
+                    className={`w-2 h-2 rounded-full mr-2 ${
+                      userRole === "admin" ? "bg-red-500" : "bg-blue-500"
+                    }`}
+                  />
+                  {userRole === "admin" ? "Администратор" : "Менеджер"}
+                </div>
               </li>
             </ul>
           </nav>
@@ -230,20 +283,13 @@ const Layout = () => {
             </div>
             <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-4">
               <div className="flex h-16 shrink-0 items-center">
-                <div className="flex items-center">
-                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">IM</span>
-                  </div>
-                  <span className="ml-3 text-xl font-bold text-gray-900">
-                    InventMaster
-                  </span>
-                </div>
+                <img src={Logo} alt="" />
               </div>
               <nav className="flex flex-1 flex-col">
                 <ul role="list" className="flex flex-1 flex-col gap-y-7">
                   <li>
                     <ul role="list" className="-mx-2 space-y-1">
-                      {menuItems.map((item) => {
+                      {filteredMenuItems.map((item) => {
                         const isActive = location.pathname === item.path;
                         return (
                           <li key={item.path}>
@@ -274,6 +320,18 @@ const Layout = () => {
                         );
                       })}
                     </ul>
+                  </li>
+
+                  {/* Role indicator for mobile */}
+                  <li className="mt-auto">
+                    <div className="flex items-center p-2 text-xs text-gray-500 border-t border-gray-200">
+                      <div
+                        className={`w-2 h-2 rounded-full mr-2 ${
+                          userRole === "admin" ? "bg-red-500" : "bg-blue-500"
+                        }`}
+                      />
+                      {userRole === "admin" ? "Администратор" : "Менеджер"}
+                    </div>
                   </li>
                 </ul>
               </nav>
@@ -306,12 +364,20 @@ const Layout = () => {
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                 >
                   <span className="sr-only">Открыть меню пользователя</span>
-                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-                    <span className="text-white font-semibold text-sm">A</span>
+                  <div
+                    className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                      userRole === "admin"
+                        ? "bg-gradient-to-br from-red-600 to-red-700"
+                        : "bg-gradient-to-br from-blue-600 to-purple-600"
+                    }`}
+                  >
+                    <span className="text-white font-semibold text-sm">
+                      {userRole === "admin" ? "A" : "M"}
+                    </span>
                   </div>
                   <span className="hidden lg:flex lg:items-center">
                     <span className="ml-4 text-sm font-semibold leading-6 text-gray-900">
-                      Администратор
+                      {userRole === "admin" ? "Администратор" : "Менеджер"}
                     </span>
                   </span>
                 </button>
