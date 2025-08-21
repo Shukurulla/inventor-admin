@@ -29,7 +29,7 @@ import {
   useGetUsersQuery,
   useDeleteEquipmentMutation,
 } from "../api/dashboardApi";
-
+import { useGetUsersQuery } from "../api/usersApi";
 const { Panel } = Collapse;
 const { Option } = Select;
 
