@@ -22,7 +22,7 @@ import Users from "./pages/Users";
 import UserDetail from "./pages/UserDetail";
 import UniversityStructure from "./pages/UniversityStructure";
 import Statistics from "./pages/Statistics";
-import AddedPage from "./pages/AddedPage";
+// import AddedPage from "./pages/AddedPage";
 import SpecificationsPage from "./pages/SpecificationsPage";
 import AdminEquipmentPage from "./pages/AdminEquipmentPage";
 
@@ -65,7 +65,6 @@ const App = () => {
               {/* Routes available to all authenticated users */}
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="statistics" element={<Statistics />} />
-              <Route path="added" element={<AddedPage />} />
               <Route path="specifications" element={<SpecificationsPage />} />
 
               {/* Admin-only routes */}
