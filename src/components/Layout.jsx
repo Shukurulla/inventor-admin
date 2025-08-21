@@ -114,52 +114,43 @@ const Layout = () => {
 
   // Get user role from Redux store (assuming it's stored there)
   const { user } = useSelector((state) => state.auth || {});
-  const userRole = user?.role || localStorage.getItem("userRole") || "manager";
 
   const menuItems = [
     {
       path: "/dashboard",
       text: "Панель управления",
       icon: ChartBarIcon,
-      roles: ["admin", "manager"],
     },
     {
       path: "/statistics",
       text: "Статистика",
       icon: ChartBarIcon,
-      roles: ["admin", "manager"],
     },
     {
       path: "/added",
       text: "Мое оборудование",
       icon: ClipboardDocumentListIcon,
-      roles: ["admin", "manager"],
     },
     {
       path: "/specifications",
       text: "Характеристики",
       icon: CogIcon,
-      roles: ["admin", "manager"],
     },
-    { path: "/users", text: "Пользователи", icon: UsersIcon, roles: ["admin"] },
+    { path: "/users", text: "Пользователи", icon: UsersIcon },
     {
       path: "/admin-equipment",
       text: "Все оборудование",
       icon: ComputerDesktopIcon,
-      roles: ["admin"],
     },
     {
       path: "/university-structure",
       text: "Структура университета",
       icon: CubeIcon,
-      roles: ["admin"],
     },
   ];
 
   // Filter menu items based on user role
-  const filteredMenuItems = menuItems.filter((item) =>
-    item.roles.includes(userRole)
-  );
+  const filteredMenuItems = menuItems;
 
   const showConfirmation = (title, message, onConfirm, type = "danger") => {
     setConfirmModal({
@@ -252,11 +243,10 @@ const Layout = () => {
               <li className="mt-auto">
                 <div className="flex items-center p-2 text-xs text-gray-500 border-t border-gray-200">
                   <div
-                    className={`w-2 h-2 rounded-full mr-2 ${
-                      userRole === "admin" ? "bg-red-500" : "bg-blue-500"
-                    }`}
+                    className={`w-2 h-2 rounded-full mr-2 bg-blue-500
+                    `}
                   />
-                  {userRole === "admin" ? "Администратор" : "Менеджер"}
+                  Администратор
                 </div>
               </li>
             </ul>
@@ -326,11 +316,9 @@ const Layout = () => {
                   <li className="mt-auto">
                     <div className="flex items-center p-2 text-xs text-gray-500 border-t border-gray-200">
                       <div
-                        className={`w-2 h-2 rounded-full mr-2 ${
-                          userRole === "admin" ? "bg-red-500" : "bg-blue-500"
-                        }`}
+                        className={`w-2 h-2 rounded-full mr-2 bg-blue-500`}
                       />
-                      {userRole === "admin" ? "Администратор" : "Менеджер"}
+                      Администратор
                     </div>
                   </li>
                 </ul>
@@ -365,19 +353,15 @@ const Layout = () => {
                 >
                   <span className="sr-only">Открыть меню пользователя</span>
                   <div
-                    className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                      userRole === "admin"
-                        ? "bg-gradient-to-br from-red-600 to-red-700"
-                        : "bg-gradient-to-br from-blue-600 to-purple-600"
-                    }`}
+                    className={`h-8 w-8 rounded-full flex items-center justify-center
+                      
+                        bg-gradient-to-br from-blue-600 to-purple-600`}
                   >
-                    <span className="text-white font-semibold text-sm">
-                      {userRole === "admin" ? "A" : "M"}
-                    </span>
+                    <span className="text-white font-semibold text-sm">A</span>
                   </div>
                   <span className="hidden lg:flex lg:items-center">
                     <span className="ml-4 text-sm font-semibold leading-6 text-gray-900">
-                      {userRole === "admin" ? "Администратор" : "Менеджер"}
+                      Администратор
                     </span>
                   </span>
                 </button>

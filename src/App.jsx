@@ -68,37 +68,12 @@ const App = () => {
               <Route path="specifications" element={<SpecificationsPage />} />
 
               {/* Admin-only routes */}
-              <Route
-                path="users"
-                element={
-                  <RoleProtectedRoute allowedRoles={["admin"]}>
-                    <Users />
-                  </RoleProtectedRoute>
-                }
-              />
-              <Route
-                path="users/:userId"
-                element={
-                  <RoleProtectedRoute allowedRoles={["admin"]}>
-                    <UserDetail />
-                  </RoleProtectedRoute>
-                }
-              />
-              <Route
-                path="admin-equipment"
-                element={
-                  <RoleProtectedRoute allowedRoles={["admin"]}>
-                    <AdminEquipmentPage />
-                  </RoleProtectedRoute>
-                }
-              />
+              <Route path="users" element={<Users />} />
+              <Route path="users/:userId" element={<UserDetail />} />
+              <Route path="admin-equipment" element={<AdminEquipmentPage />} />
               <Route
                 path="university-structure"
-                element={
-                  <RoleProtectedRoute allowedRoles={["admin"]}>
-                    <UniversityStructure />
-                  </RoleProtectedRoute>
-                }
+                element={<UniversityStructure />}
               />
             </Route>
           </Routes>
