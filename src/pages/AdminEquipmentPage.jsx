@@ -1,5 +1,5 @@
-// src/pages/AdminEquipmentPage.jsx - RTK Query version
-import { useState } from "react";
+// src/pages/AdminEquipmentPage.jsx - Complete RTK Query version without errors
+import React, { useState } from "react";
 import {
   Card,
   Collapse,
@@ -10,6 +10,7 @@ import {
   message,
   Select,
   Pagination,
+  Popconfirm,
 } from "antd";
 import {
   FiChevronRight,
@@ -32,7 +33,7 @@ import {
 const { Panel } = Collapse;
 const { Option } = Select;
 
-// Status utilities (create this file if not exists)
+// Status utilities
 const getStatusText = (status) => {
   switch (status) {
     case "NEW":
@@ -44,7 +45,7 @@ const getStatusText = (status) => {
     case "DISPOSED":
       return "Утилизировано";
     default:
-      return status;
+      return status || "Неизвестно";
   }
 };
 
@@ -80,7 +81,7 @@ const getStatusConfig = (status) => {
       };
     default:
       return {
-        text: status,
+        text: status || "Неизвестно",
         color: "#6b7280",
         bgColor: "#f3f4f6",
         borderColor: "#d1d5db",
@@ -91,38 +92,23 @@ const getStatusConfig = (status) => {
 // Equipment Icon Component
 const EquipmentIcon = ({ type, className = "text-lg" }) => {
   const getIcon = () => {
-    const typeLower = type?.toLowerCase() || "";
+    if (!type) return "⚙️";
 
-    if (typeLower.includes("проектор")) {
-      return "📽️";
-    }
-    if (typeLower.includes("компьютер")) {
-      return "💻";
-    }
-    if (typeLower.includes("принтер")) {
-      return "🖨️";
-    }
-    if (typeLower.includes("монитор")) {
-      return "🖥️";
-    }
-    if (typeLower.includes("телевизор")) {
-      return "📺";
-    }
-    if (typeLower.includes("роутер") || typeLower.includes("router")) {
+    const typeLower = type.toLowerCase();
+
+    if (typeLower.includes("проектор")) return "📽️";
+    if (typeLower.includes("компьютер")) return "💻";
+    if (typeLower.includes("принтер")) return "🖨️";
+    if (typeLower.includes("монитор")) return "🖥️";
+    if (typeLower.includes("телевизор")) return "📺";
+    if (typeLower.includes("роутер") || typeLower.includes("router"))
       return "📡";
-    }
-    if (typeLower.includes("ноутбук")) {
-      return "💻";
-    }
-    if (typeLower.includes("моноблок")) {
-      return "🖥️";
-    }
-    if (typeLower.includes("доска") || typeLower.includes("электронная")) {
+    if (typeLower.includes("ноутбук")) return "💻";
+    if (typeLower.includes("моноблок")) return "🖥️";
+    if (typeLower.includes("доска") || typeLower.includes("электронная"))
       return "📋";
-    }
-    if (typeLower.includes("удлинитель") || typeLower.includes("extender")) {
+    if (typeLower.includes("удлинитель") || typeLower.includes("extender"))
       return "🔌";
-    }
 
     return "⚙️";
   };
@@ -134,39 +120,65 @@ const AdminEquipmentPage = () => {
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState(null);
   const [filters, setFilters] = useState({
-    building_id: null,
-    room_id: null,
-    type_id: null,
-    status: null,
-    author_id: null,
+    building_id: undefined,
+    room_id: undefined,
+    type_id: undefined,
+    status: undefined,
+    author_id: undefined,
   });
 
   // Pagination states for each type
   const [paginationByType, setPaginationByType] = useState({});
   const [pageSize] = useState(5);
 
-  // RTK Query hooks
-  const { data: equipment = [], isLoading: equipmentLoading } =
-    useGetEquipmentQuery(filters);
-  const { data: buildings = [] } = useGetBuildingsQuery();
-  const { data: rooms = [] } = useGetRoomsQuery();
-  const { data: equipmentTypes = [] } = useGetEquipmentTypesQuery();
-  const { data: users = [] } = useGetUsersQuery();
-  const [deleteEquipment] = useDeleteEquipmentMutation();
+  // RTK Query hooks with error handling
+  const {
+    data: equipmentResponse,
+    isLoading: equipmentLoading,
+    error: equipmentError,
+  } = useGetEquipmentQuery(filters, {
+    skip: false,
+    refetchOnMountOrArgChange: true,
+  });
 
-  // Get all equipment (ensure it's an array)
+  const { data: buildings = [], isLoading: buildingsLoading } =
+    useGetBuildingsQuery();
+  const { data: rooms = [], isLoading: roomsLoading } = useGetRoomsQuery();
+  const { data: equipmentTypes = [], isLoading: typesLoading } =
+    useGetEquipmentTypesQuery();
+  const { data: users = [], isLoading: usersLoading } = useGetUsersQuery();
+  const [deleteEquipment, { isLoading: deleteLoading }] =
+    useDeleteEquipmentMutation();
+
+  // Safely extract equipment array from response
   const getAllEquipment = () => {
-    // Handle different response structures
+    if (!equipmentResponse) return [];
+
     let equipmentArray = [];
 
-    if (Array.isArray(equipment)) {
-      equipmentArray = equipment;
-    } else if (equipment.results && Array.isArray(equipment.results)) {
-      equipmentArray = equipment.results;
-    } else if (equipment.data && Array.isArray(equipment.data)) {
-      equipmentArray = equipment.data;
+    // Handle different response structures
+    if (Array.isArray(equipmentResponse)) {
+      equipmentArray = equipmentResponse;
+    } else if (
+      equipmentResponse.results &&
+      Array.isArray(equipmentResponse.results)
+    ) {
+      equipmentArray = equipmentResponse.results;
+    } else if (
+      equipmentResponse.data &&
+      Array.isArray(equipmentResponse.data)
+    ) {
+      equipmentArray = equipmentResponse.data;
+    } else if (
+      typeof equipmentResponse === "object" &&
+      equipmentResponse.equipment
+    ) {
+      equipmentArray = Array.isArray(equipmentResponse.equipment)
+        ? equipmentResponse.equipment
+        : [];
     }
 
+    // Filter valid equipment items
     return equipmentArray.filter(
       (item) =>
         item &&
@@ -176,43 +188,24 @@ const AdminEquipmentPage = () => {
     );
   };
 
+  // Group equipment by type
   const groupEquipmentByType = () => {
     const validEquipment = getAllEquipment();
-    let filteredEquipment = [...validEquipment];
-
-    // Apply filters (RTK Query will handle most filtering, but we can do client-side filtering too)
-    if (filters.building_id) {
-      filteredEquipment = filteredEquipment.filter(
-        (item) => item.room_data?.building === filters.building_id
-      );
-    }
-    if (filters.room_id) {
-      filteredEquipment = filteredEquipment.filter(
-        (item) => item.room_data?.id === filters.room_id
-      );
-    }
-    if (filters.type_id) {
-      filteredEquipment = filteredEquipment.filter(
-        (item) => (item.type_data?.id || item.type) === filters.type_id
-      );
-    }
-    if (filters.status) {
-      filteredEquipment = filteredEquipment.filter(
-        (item) => item.status === filters.status
-      );
-    }
-    if (filters.author_id) {
-      filteredEquipment = filteredEquipment.filter(
-        (item) => item.author?.id === filters.author_id
-      );
-    }
-
     const grouped = {};
-    filteredEquipment.forEach((item) => {
-      const typeName =
-        item.type_data?.name ||
-        equipmentTypes.find((t) => t.id === item.type)?.name ||
-        "Неизвестный тип";
+
+    validEquipment.forEach((item) => {
+      // Determine type name safely
+      let typeName = "Неизвестный тип";
+
+      if (item.type_data?.name) {
+        typeName = item.type_data.name;
+      } else if (item.type && equipmentTypes.length > 0) {
+        const foundType = equipmentTypes.find((t) => t.id === item.type);
+        if (foundType) {
+          typeName = foundType.name;
+        }
+      }
+
       if (!grouped[typeName]) {
         grouped[typeName] = [];
       }
@@ -255,69 +248,67 @@ const AdminEquipmentPage = () => {
     setSelectedEquipment(null);
   };
 
-  // Handle delete confirmation
-  const handleDelete = async (equipment) => {
-    Modal.confirm({
-      title: "Удалить оборудование?",
-      content: `Вы уверены, что хотите удалить "${equipment.name}"?`,
-      onOk: async () => {
-        try {
-          await deleteEquipment(equipment.id).unwrap();
-          message.success("Оборудование успешно удалено!");
-        } catch (error) {
-          console.error("Ошибка при удалении оборудования:", error);
-          message.error("Ошибка при удалении оборудования");
-        }
-      },
-      okText: "Да",
-      cancelText: "Нет",
-      okType: "danger",
-    });
+  // Handle edit button click
+  const handleEdit = (equipment) => {
+    message.info(
+      "Функция редактирования будет добавлена в следующих обновлениях"
+    );
   };
 
+  // Handle delete confirmation
+  const handleDelete = async (equipment) => {
+    try {
+      await deleteEquipment(equipment.id).unwrap();
+      message.success("Оборудование успешно удалено!");
+    } catch (error) {
+      console.error("Ошибка при удалении оборудования:", error);
+      message.error("Ошибка при удалении оборудования");
+    }
+  };
+
+  // Handle filter changes
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({
       ...prev,
       [key]: value,
       // Reset room filter when building changes
-      ...(key === "building_id" ? { room_id: null } : {}),
+      ...(key === "building_id" ? { room_id: undefined } : {}),
     }));
     // Reset pagination for all types when filters change
     setPaginationByType({});
   };
 
+  // Clear all filters
   const clearFilters = () => {
     setFilters({
-      building_id: null,
-      room_id: null,
-      type_id: null,
-      status: null,
-      author_id: null,
+      building_id: undefined,
+      room_id: undefined,
+      type_id: undefined,
+      status: undefined,
+      author_id: undefined,
     });
     setPaginationByType({});
   };
 
+  // Check if any filters are active
   const hasActiveFilters = () => {
-    return (
-      filters.building_id ||
-      filters.room_id ||
-      filters.type_id ||
-      filters.status ||
-      filters.author_id
+    return Object.values(filters).some(
+      (value) => value !== undefined && value !== null
     );
   };
 
   // Get rooms for selected building
   const getFilteredRooms = () => {
-    if (!filters.building_id) return rooms;
+    if (!filters.building_id || rooms.length === 0) return rooms;
     return rooms.filter((room) => room.building === filters.building_id);
   };
 
   // Get unique authors for filter
   const getUniqueAuthors = () => {
-    return users || [];
+    return Array.isArray(users) ? users : [];
   };
 
+  // Render individual equipment item
   const renderEquipmentItem = (item) => {
     const statusConfig = getStatusConfig(item.status);
 
@@ -335,9 +326,12 @@ const AdminEquipmentPage = () => {
               }
             />
           </div>
+
           <div className="flex-1">
             <div className="flex items-center space-x-2 mb-1">
-              <span className="font-medium text-gray-800">{item.name}</span>
+              <span className="font-medium text-gray-800">
+                {item.name || `Оборудование #${item.id}`}
+              </span>
               <span
                 className="px-2 py-1 rounded text-xs font-medium"
                 style={{
@@ -349,6 +343,7 @@ const AdminEquipmentPage = () => {
                 {statusConfig.text}
               </span>
             </div>
+
             <div className="flex items-center space-x-4 text-sm text-gray-500">
               <div className="flex items-center space-x-1">
                 <FiMapPin className="text-gray-400" />
@@ -378,29 +373,57 @@ const AdminEquipmentPage = () => {
             title="Подробнее"
             className="text-blue-500 hover:text-blue-700"
           />
+
           <Button
             type="text"
             icon={<FiEdit />}
-            onClick={() => message.info("Редактирование будет добавлено позже")}
+            onClick={() => handleEdit(item)}
             size="small"
             title="Редактировать"
             className="text-indigo-500 hover:text-indigo-700"
           />
-          <Button
-            type="text"
-            danger
-            icon={<FiTrash2 />}
-            onClick={() => handleDelete(item)}
-            size="small"
-            title="Удалить"
-            className="text-red-500 hover:text-red-700"
-          />
+
+          <Popconfirm
+            title="Удалить оборудование?"
+            description={`Вы уверены, что хотите удалить "${
+              item.name || `Оборудование #${item.id}`
+            }"?`}
+            onConfirm={() => handleDelete(item)}
+            okText="Да"
+            cancelText="Нет"
+            okType="danger"
+          >
+            <Button
+              type="text"
+              danger
+              icon={<FiTrash2 />}
+              size="small"
+              title="Удалить"
+              loading={deleteLoading}
+              className="text-red-500 hover:text-red-700"
+            />
+          </Popconfirm>
         </div>
       </div>
     );
   };
 
+  // Render equipment list with accordion
   const renderEquipmentList = () => {
+    if (equipmentError) {
+      return (
+        <div className="text-center py-8">
+          <Empty
+            description="Ошибка загрузки оборудования"
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+          />
+          <Button type="primary" onClick={() => window.location.reload()}>
+            Обновить страницу
+          </Button>
+        </div>
+      );
+    }
+
     const groupedEquipment = groupEquipmentByType();
 
     if (Object.keys(groupedEquipment).length === 0) {
@@ -434,6 +457,7 @@ const AdminEquipmentPage = () => {
             />
           )}
           className="space-y-2"
+          ghost
         >
           {Object.entries(groupedEquipment).map(([typeName, items]) => {
             const { paginatedItems, totalItems, currentPage } =
@@ -443,7 +467,7 @@ const AdminEquipmentPage = () => {
               <Panel
                 key={typeName}
                 header={
-                  <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center justify-between w-full pr-4">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                         <EquipmentIcon
@@ -456,10 +480,10 @@ const AdminEquipmentPage = () => {
                     <Badge
                       count={totalItems}
                       style={{ backgroundColor: "#6366f1" }}
-                      className="mr-4"
                     />
                   </div>
                 }
+                className="mb-2 bg-white rounded-lg border border-gray-200"
               >
                 <div className="space-y-4">
                   {/* Equipment Items */}
@@ -494,8 +518,15 @@ const AdminEquipmentPage = () => {
     );
   };
 
+  const isLoading =
+    equipmentLoading ||
+    buildingsLoading ||
+    roomsLoading ||
+    typesLoading ||
+    usersLoading;
+
   return (
-    <div>
+    <div className="space-y-6">
       <Card className="shadow-sm">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -517,13 +548,14 @@ const AdminEquipmentPage = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex space-x-4 mb-6 p-4 bg-gray-50 rounded-lg">
+        <div className="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
           <Select
             placeholder="Корпус"
-            className="w-40"
+            style={{ width: 160 }}
             value={filters.building_id}
             onChange={(value) => handleFilterChange("building_id", value)}
             allowClear
+            loading={buildingsLoading}
           >
             {buildings.map((building) => (
               <Option key={building.id} value={building.id}>
@@ -534,11 +566,12 @@ const AdminEquipmentPage = () => {
 
           <Select
             placeholder="Комната"
-            className="w-48"
+            style={{ width: 200 }}
             value={filters.room_id}
             onChange={(value) => handleFilterChange("room_id", value)}
             allowClear
-            disabled={!filters.building_id}
+            disabled={!filters.building_id || roomsLoading}
+            loading={roomsLoading}
           >
             {getFilteredRooms().map((room) => (
               <Option key={room.id} value={room.id}>
@@ -549,10 +582,11 @@ const AdminEquipmentPage = () => {
 
           <Select
             placeholder="Тип оборудования"
-            className="w-48"
+            style={{ width: 200 }}
             value={filters.type_id}
             onChange={(value) => handleFilterChange("type_id", value)}
             allowClear
+            loading={typesLoading}
           >
             {equipmentTypes.map((type) => (
               <Option key={type.id} value={type.id}>
@@ -566,7 +600,7 @@ const AdminEquipmentPage = () => {
 
           <Select
             placeholder="Состояние"
-            className="w-40"
+            style={{ width: 160 }}
             value={filters.status}
             onChange={(value) => handleFilterChange("status", value)}
             allowClear
@@ -579,10 +613,11 @@ const AdminEquipmentPage = () => {
 
           <Select
             placeholder="Автор"
-            className="w-48"
+            style={{ width: 200 }}
             value={filters.author_id}
             onChange={(value) => handleFilterChange("author_id", value)}
             allowClear
+            loading={usersLoading}
           >
             {getUniqueAuthors().map((author) => (
               <Option key={author.id} value={author.id}>
@@ -603,7 +638,7 @@ const AdminEquipmentPage = () => {
         {/* Show active filters */}
         {hasActiveFilters() && (
           <div className="mb-4 p-3 bg-indigo-50 rounded-lg">
-            <div className="flex items-center space-x-2 text-sm text-indigo-800">
+            <div className="flex flex-wrap items-center gap-2 text-sm text-indigo-800">
               <span>Активные фильтры:</span>
               {filters.building_id && (
                 <span className="px-2 py-1 bg-indigo-200 rounded text-xs">
@@ -645,7 +680,8 @@ const AdminEquipmentPage = () => {
           </div>
         )}
 
-        {equipmentLoading ? (
+        {/* Equipment List */}
+        {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
@@ -671,7 +707,8 @@ const AdminEquipmentPage = () => {
             {/* Basic Info */}
             <div>
               <h3 className="text-lg font-medium text-indigo-600 mb-4">
-                {selectedEquipment.name}
+                {selectedEquipment.name ||
+                  `Оборудование #${selectedEquipment.id}`}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -741,46 +778,46 @@ const AdminEquipmentPage = () => {
             </div>
 
             {/* Author Info */}
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <h4 className="font-medium mb-2 flex items-center">
-                <span className="mr-2">👤</span>
-                Информация об авторе
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <span className="text-gray-500">Автор:</span>
-                  <span className="ml-2 font-medium">
-                    {selectedEquipment.author
-                      ? `${selectedEquipment.author.first_name} ${selectedEquipment.author.last_name}`
-                      : "Неизвестно"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-500">Email:</span>
-                  <span className="ml-2 font-medium">
-                    {selectedEquipment.author?.email || "Неизвестно"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-500">Роль:</span>
-                  <span className="ml-2 font-medium">
-                    {selectedEquipment.author?.role === "admin"
-                      ? "Администратор"
-                      : "Менеджер"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-500">Дата создания:</span>
-                  <span className="ml-2 font-medium">
-                    {selectedEquipment.created_at
-                      ? new Date(
-                          selectedEquipment.created_at
-                        ).toLocaleDateString()
-                      : "Неизвестно"}
-                  </span>
+            {selectedEquipment.author && (
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <h4 className="font-medium mb-2 flex items-center">
+                  <span className="mr-2">👤</span>
+                  Информация об авторе
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-gray-500">Автор:</span>
+                    <span className="ml-2 font-medium">
+                      {`${selectedEquipment.author.first_name} ${selectedEquipment.author.last_name}`}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Email:</span>
+                    <span className="ml-2 font-medium">
+                      {selectedEquipment.author.email || "Неизвестно"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Роль:</span>
+                    <span className="ml-2 font-medium">
+                      {selectedEquipment.author.role === "admin"
+                        ? "Администратор"
+                        : "Менеджер"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Дата создания:</span>
+                    <span className="ml-2 font-medium">
+                      {selectedEquipment.created_at
+                        ? new Date(
+                            selectedEquipment.created_at
+                          ).toLocaleDateString("ru")
+                        : "Неизвестно"}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* QR Code */}
             {selectedEquipment.inn && (
@@ -791,10 +828,21 @@ const AdminEquipmentPage = () => {
                     src={`https://api.qrserver.com/v1/create-qr-code/?data=${selectedEquipment.inn}&size=200x200&bgcolor=FFFFFF&color=000000&format=png`}
                     alt="QR Code"
                     className="w-32 h-32 mx-auto"
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                      e.target.nextSibling.style.display = "block";
+                    }}
                   />
+                  <div
+                    style={{ display: "none" }}
+                    className="w-32 h-32 bg-gray-200 rounded flex items-center justify-center"
+                  >
+                    <span className="text-gray-500">QR код недоступен</span>
+                  </div>
                 </div>
                 <p className="text-sm text-gray-500 mt-2">
-                  Уникальный идентификатор: {selectedEquipment.uid}
+                  Уникальный идентификатор:{" "}
+                  {selectedEquipment.uid || selectedEquipment.inn}
                 </p>
               </div>
             )}
