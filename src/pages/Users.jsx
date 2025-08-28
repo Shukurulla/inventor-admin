@@ -188,6 +188,8 @@ const Users = () => {
     switch (role) {
       case "admin":
         return "Администратор";
+      case "user":
+        return "Юзер";
       default:
         return "Менеджер";
     }
@@ -459,6 +461,7 @@ const Users = () => {
               >
                 <MenuItem value="manager">Менеджер</MenuItem>
                 <MenuItem value="admin">Администратор</MenuItem>
+                <MenuItem value="user">Юзер</MenuItem>
               </Select>
             </FormControl>
           </Box>
